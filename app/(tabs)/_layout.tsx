@@ -9,24 +9,26 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 78,
+          backgroundColor: colors.chalk,
+          borderTopColor: colors.ink,
+          borderTopWidth: 5,
+          height: 82,
           paddingTop: 8,
           paddingBottom: 18,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
+          fontSize: 10,
+          fontWeight: "900",
+          letterSpacing: 1,
+          textTransform: "uppercase",
           marginTop: 2,
         },
-        tabBarActiveTintColor: colors.text,
+        tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.textFaint,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="markets"
         options={{
           title: "Markets",
           tabBarIcon: ({ focused, color }) => (

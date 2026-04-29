@@ -54,6 +54,17 @@ type Store = {
     subjectUserIds: string[]
   ) => { ok: true; id: string } | { ok: false; reason: string };
 
+  /**
+   * Subject-as-judge: the viewer confesses or denies a prop about them.
+   * Records the verdict and resolves the prop directly (one-shot for the
+   * demo). When backend lands, this becomes one weighted vote with
+   * tie-break rules.
+   */
+  confessOrDeny: (
+    propId: string,
+    verdict: "CONFESSED" | "DENIED"
+  ) => { ok: true } | { ok: false; reason: string };
+
   /** Helper: prop by id. */
   propById: (id: string) => MockProp | undefined;
 };
@@ -170,6 +181,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [props, votes]
   );
 
+  const confessOrDeny: Store["confessOrDeny"] = useCallback(
+    (propId, verdict) => {
+      const prop = props.find((p) => p.id === propId);
+      if (!prop) return { ok: false, reason: "Prop not found" };
+      if (!prop.subjectUserIds.includes(CURRENT_USER_ID)) {
+        return { ok: false, reason: "This prop isn't about you" };
+      }
+      if (prop.status !== "AWAITING_VERDICT") {
+        return { ok: false, reason: "Prop isn't awaiting a verdict yet" };
+      }
+      const winningSide: "YES" | "NO" = verdict === "CONFESSED" ? "YES" : "NO";
+
+      setProps((prev) =>
+        prev.map((p) => {
+          if (p.id !== propId) return p;
+          return {
+            ...p,
+            subjectVerdict: verdict,
+            status: "RESOLVED",
+            resolvedSide: winningSide,
+          };
+        })
+      );
+      return { ok: true };
+    },
+    [props]
+  );
+
   const addProp: Store["addProp"] = useCallback(
     (eventId, description, subjectUserIds) => {
       const trimmed = description.trim();
@@ -215,9 +254,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       placeBet,
       castVote,
       addProp,
+      confessOrDeny,
       propById,
     }),
-    [balance, props, positions, votes, placeBet, castVote, addProp, propById]
+    [
+      balance,
+      props,
+      positions,
+      votes,
+      placeBet,
+      castVote,
+      addProp,
+      confessOrDeny,
+      propById,
+    ]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

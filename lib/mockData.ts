@@ -42,6 +42,12 @@ export type MockProp = {
   voterCount: number;
   /** Set when status === RESOLVED. */
   resolvedSide?: "YES" | "NO";
+  /**
+   * Subject's own confession when the prop hits AWAITING_VERDICT. Indexed
+   * per-subject would be ideal once we have a real backend; for the demo
+   * we store one string keyed off the first listed subject.
+   */
+  subjectVerdict?: "CONFESSED" | "DENIED";
 };
 
 export const CURRENT_USER_ID = "u_jules";
@@ -282,6 +288,28 @@ export const mockProps: MockProp[] = [
     voterCount: 5,
   },
   {
+    id: "prp_22",
+    eventId: "evt_5",
+    description: "Jules picks a song from before 1990",
+    subjectUserIds: ["u_jules"],
+    status: "AWAITING_VERDICT",
+    yesPool: 540,
+    noPool: 280,
+    votes: { yes: 2, no: 1 },
+    voterCount: 4,
+  },
+  {
+    id: "prp_23",
+    eventId: "evt_5",
+    description: "Jules duets with Steve at least once",
+    subjectUserIds: ["u_jules"],
+    status: "AWAITING_VERDICT",
+    yesPool: 320,
+    noPool: 660,
+    votes: { yes: 1, no: 2 },
+    voterCount: 4,
+  },
+  {
     id: "prp_21",
     eventId: "evt_5",
     description: "Romi cries during a slow song",
@@ -316,4 +344,27 @@ export function eventPot(eventId: string, props: MockProp[]): number {
   return props
     .filter((p) => p.eventId === eventId)
     .reduce((acc, p) => acc + p.yesPool + p.noPool, 0);
+}
+
+/**
+ * Mirror state for a viewer.
+ * - secret: count of OPEN props about the viewer (descriptions hidden).
+ * - pending: AWAITING_VERDICT props the viewer should judge (descriptions
+ *   are unmasked here — the event has ended).
+ * - judged: props the viewer already confessed/denied on.
+ */
+export function mirrorStateFor(viewerId: string, props: MockProp[]) {
+  const subjectProps = props.filter((p) => p.subjectUserIds.includes(viewerId));
+  const secret = subjectProps.filter((p) => p.status === "OPEN");
+  const pending = subjectProps.filter(
+    (p) => p.status === "AWAITING_VERDICT" && !p.subjectVerdict
+  );
+  const judged = subjectProps.filter((p) => p.subjectVerdict);
+  return {
+    secretCount: secret.length,
+    pendingCount: pending.length,
+    judgedCount: judged.length,
+    pending,
+    judged,
+  };
 }

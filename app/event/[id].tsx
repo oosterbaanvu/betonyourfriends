@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 import {
   mockEvents,
   MockProp,
@@ -19,10 +19,10 @@ import { AddPropSheet } from "@/components/AddPropSheet";
 import { AvatarStack } from "@/components/AvatarStack";
 
 const STATUS_META = {
-  LIVE: { label: "Live", bg: colors.liveFaint, fg: colors.live, dot: true },
-  OPEN: { label: "Open", bg: colors.primaryFaint, fg: colors.primary, dot: false },
-  RESOLVING: { label: "Resolving", bg: colors.warnFaint, fg: colors.warn, dot: false },
-  CLOSED: { label: "Closed", bg: colors.neutralFaint, fg: colors.neutral, dot: false },
+  LIVE: { label: "LIVE", bg: colors.liveBg, fg: colors.chalk },
+  OPEN: { label: "OPEN", bg: colors.lime, fg: colors.ink },
+  RESOLVING: { label: "VERDICT", bg: colors.warnBg, fg: colors.ink },
+  CLOSED: { label: "CLOSED", bg: colors.ash, fg: colors.chalk },
 };
 
 type Tab = "open" | "verdict" | "resolved";
@@ -32,35 +32,48 @@ function HiddenCount({ count }: { count: number }) {
   return (
     <View
       style={{
-        backgroundColor: colors.bg,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.lg,
+        backgroundColor: colors.ink,
         padding: 14,
         marginBottom: 12,
         flexDirection: "row",
         alignItems: "center",
+        marginRight: 5,
       }}
     >
       <View
         style={{
           width: 36,
           height: 36,
-          borderRadius: radius.sm,
-          backgroundColor: colors.bgInset,
+          borderColor: colors.lime,
+          borderWidth: border.thick,
           alignItems: "center",
           justifyContent: "center",
-          marginRight: 10,
+          marginRight: 12,
         }}
       >
-        <Ionicons name="eye-off-outline" size={18} color={colors.textMuted} />
+        <Ionicons name="eye-off" size={18} color={colors.lime} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontWeight: "700", color: colors.text, fontSize: 14 }}>
-          {count} prop{count > 1 ? "s" : ""} hidden
+        <Text
+          style={{
+            fontWeight: "900",
+            color: colors.chalk,
+            fontSize: 13,
+            letterSpacing: 0.6,
+          }}
+        >
+          {count} PROP{count > 1 ? "S" : ""} HIDDEN
         </Text>
-        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>
-          Some props are about you. You'll see the verdict after they resolve.
+        <Text
+          style={{
+            color: "#A1A1A1",
+            fontSize: 11,
+            fontWeight: "700",
+            marginTop: 2,
+            fontFamily: "Courier",
+          }}
+        >
+          Some props are about you. Verdicts only.
         </Text>
       </View>
     </View>
@@ -77,21 +90,20 @@ function SegmentedTabs({
   counts: Record<Tab, number>;
 }) {
   const items: { id: Tab; label: string }[] = [
-    { id: "open", label: "Open" },
-    { id: "verdict", label: "Verdict" },
-    { id: "resolved", label: "Resolved" },
+    { id: "open", label: "OPEN" },
+    { id: "verdict", label: "VERDICT" },
+    { id: "resolved", label: "RESOLVED" },
   ];
   return (
     <View
       style={{
         flexDirection: "row",
-        backgroundColor: colors.bgInset,
-        borderRadius: radius.md,
-        padding: 4,
+        borderColor: colors.ink,
+        borderWidth: border.thick,
         marginBottom: 16,
       }}
     >
-      {items.map((it) => {
+      {items.map((it, i) => {
         const isActive = tab === it.id;
         return (
           <Pressable
@@ -99,46 +111,39 @@ function SegmentedTabs({
             onPress={() => onChange(it.id)}
             style={{
               flex: 1,
-              backgroundColor: isActive ? colors.bg : "transparent",
-              borderRadius: radius.sm,
-              paddingVertical: 8,
+              backgroundColor: isActive ? colors.ink : colors.chalk,
+              paddingVertical: 10,
               alignItems: "center",
               flexDirection: "row",
               justifyContent: "center",
+              borderRightWidth:
+                i === items.length - 1 ? 0 : border.thick,
+              borderRightColor: colors.ink,
             }}
           >
             <Text
               style={{
-                color: isActive ? colors.text : colors.textMuted,
-                fontWeight: "700",
-                fontSize: 13,
+                color: isActive ? colors.chalk : colors.ink,
+                fontWeight: "900",
+                fontSize: 11,
+                letterSpacing: 1.4,
               }}
             >
               {it.label}
             </Text>
             {counts[it.id] > 0 ? (
-              <View
+              <Text
                 style={{
                   marginLeft: 6,
-                  backgroundColor: isActive ? colors.text : "transparent",
-                  borderWidth: isActive ? 0 : 1,
-                  borderColor: colors.borderStrong,
-                  paddingHorizontal: 6,
-                  borderRadius: radius.pill,
-                  minWidth: 20,
-                  alignItems: "center",
+                  color: isActive ? colors.lime : colors.textMuted,
+                  fontSize: 11,
+                  fontWeight: "900",
+                  fontVariant: ["tabular-nums"],
+                  fontFamily: "Courier",
                 }}
               >
-                <Text
-                  style={{
-                    color: isActive ? "#FFFFFF" : colors.textMuted,
-                    fontSize: 11,
-                    fontWeight: "700",
-                  }}
-                >
-                  {counts[it.id]}
-                </Text>
-              </View>
+                {counts[it.id]}
+              </Text>
             ) : null}
           </Pressable>
         );
@@ -151,34 +156,35 @@ function HeaderAction({
   icon,
   label,
   onPress,
+  bg = "chalk",
 }: {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   label: string;
   onPress: () => void;
+  bg?: keyof typeof colors;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: colors.bg,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.pill,
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        marginLeft: 8,
-        opacity: pressed ? 0.85 : 1,
-      })}
+        backgroundColor: colors[bg],
+        borderColor: colors.ink,
+        borderWidth: border.thick,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        marginLeft: 6,
+      }}
     >
-      <Ionicons name={icon} size={14} color={colors.text} />
+      <Ionicons name={icon} size={14} color={colors.ink} />
       <Text
         style={{
           marginLeft: 5,
-          color: colors.text,
-          fontSize: 13,
-          fontWeight: "700",
+          color: colors.ink,
+          fontSize: 11,
+          fontWeight: "900",
+          letterSpacing: 1.2,
         }}
       >
         {label}
@@ -223,7 +229,7 @@ export default function EventDetailScreen() {
 
   if (!event) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bone }}>
         <Text style={{ padding: 20, color: colors.textMuted }}>
           Event not found.
         </Text>
@@ -242,23 +248,25 @@ export default function EventDetailScreen() {
     0
   );
 
-  const tabProps = tab === "open" ? open : tab === "verdict" ? awaiting : resolved;
+  const tabProps =
+    tab === "open" ? open : tab === "verdict" ? awaiting : resolved;
 
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
-      style={{ flex: 1, backgroundColor: colors.bg }}
+      style={{ flex: 1, backgroundColor: colors.bone }}
     >
       <StatusBar barStyle="dark-content" />
 
-      {/* Top bar */}
+      {/* Title slab */}
       <View
         style={{
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          paddingHorizontal: 18,
+          paddingTop: 12,
+          paddingBottom: 16,
+          backgroundColor: colors.chalk,
+          borderBottomColor: colors.ink,
+          borderBottomWidth: border.brutal,
         }}
       >
         <View
@@ -266,43 +274,55 @@ export default function EventDetailScreen() {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 14,
+            marginBottom: 12,
           }}
         >
           <Pressable
             onPress={() => router.back()}
             hitSlop={12}
-            style={{ flexDirection: "row", alignItems: "center" }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              backgroundColor: colors.ink,
+            }}
           >
-            <Ionicons name="chevron-back" size={20} color={colors.text} />
+            <Ionicons name="chevron-back" size={14} color={colors.chalk} />
             <Text
               style={{
-                color: colors.text,
-                fontWeight: "600",
-                fontSize: 15,
-                marginLeft: 2,
+                marginLeft: 4,
+                color: colors.chalk,
+                fontSize: 11,
+                fontWeight: "900",
+                letterSpacing: 1.4,
               }}
             >
-              Markets
+              MARKETS
             </Text>
           </Pressable>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: colors.bgInset,
+              backgroundColor: colors.ink,
               paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderRadius: radius.pill,
+              paddingVertical: 4,
             }}
           >
-            <Ionicons name="wallet-outline" size={13} color={colors.text} />
             <Text
               style={{
-                marginLeft: 5,
-                color: colors.text,
-                fontSize: 13,
-                fontWeight: "700",
+                color: colors.lime,
+                fontSize: 9,
+                fontWeight: "900",
+                letterSpacing: 1.2,
+              }}
+            >
+              BAL
+            </Text>
+            <Text
+              style={{
+                color: colors.chalk,
+                fontSize: 14,
+                fontWeight: "900",
                 fontVariant: ["tabular-nums"],
               }}
             >
@@ -311,30 +331,27 @@ export default function EventDetailScreen() {
           </View>
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+        <View
+          style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+        >
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
               backgroundColor: meta.bg,
+              borderColor: colors.ink,
+              borderWidth: border.thick,
               paddingHorizontal: 8,
               paddingVertical: 3,
-              borderRadius: radius.pill,
               marginRight: 8,
             }}
           >
-            {meta.dot ? (
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: meta.fg,
-                  marginRight: 5,
-                }}
-              />
-            ) : null}
-            <Text style={{ color: meta.fg, fontSize: 12, fontWeight: "700" }}>
+            <Text
+              style={{
+                color: meta.fg,
+                fontSize: 10,
+                fontWeight: "900",
+                letterSpacing: 1.4,
+              }}
+            >
               {meta.label}
             </Text>
           </View>
@@ -346,11 +363,12 @@ export default function EventDetailScreen() {
 
         <Text
           style={{
-            fontSize: 24,
-            fontWeight: "800",
-            color: colors.text,
-            letterSpacing: -0.5,
-            lineHeight: 28,
+            fontSize: 28,
+            fontWeight: "900",
+            color: colors.ink,
+            letterSpacing: -0.8,
+            lineHeight: 32,
+            textTransform: "uppercase",
           }}
         >
           {event.title}
@@ -358,12 +376,15 @@ export default function EventDetailScreen() {
         <Text
           style={{
             color: colors.textMuted,
-            fontSize: 13,
-            fontWeight: "500",
-            marginTop: 2,
+            fontSize: 11,
+            fontWeight: "900",
+            marginTop: 4,
+            fontFamily: "Courier",
+            letterSpacing: 1,
           }}
         >
-          by {event.creator}, {visible.length} markets, {totalVolume.toLocaleString()} volume
+          BY {event.creator.toUpperCase()} · {visible.length} MARKETS · VOL{" "}
+          {totalVolume.toLocaleString()}
         </Text>
 
         <View
@@ -378,21 +399,24 @@ export default function EventDetailScreen() {
             style={{
               marginLeft: 10,
               color: colors.textMuted,
-              fontSize: 12,
-              fontWeight: "600",
+              fontSize: 11,
+              fontWeight: "900",
+              letterSpacing: 1,
+              fontFamily: "Courier",
             }}
           >
-            {members.length} in this event
+            {members.length} IN
           </Text>
           <View style={{ flex: 1, flexDirection: "row", justifyContent: "flex-end" }}>
             <HeaderAction
-              icon="add-outline"
-              label="Add prop"
+              icon="add"
+              label="ADD PROP"
               onPress={() => setShowAdd(true)}
+              bg="lime"
             />
             <HeaderAction
-              icon="share-outline"
-              label="Invite"
+              icon="share-social"
+              label="INVITE"
               onPress={() => setShowInvite(true)}
             />
           </View>
@@ -400,7 +424,7 @@ export default function EventDetailScreen() {
       </View>
 
       <ScrollView
-        style={{ flex: 1, backgroundColor: colors.bgSubtle }}
+        style={{ flex: 1, backgroundColor: colors.bone }}
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
       >
         <HiddenCount count={hiddenCount} />
@@ -418,38 +442,35 @@ export default function EventDetailScreen() {
         {tabProps.length === 0 ? (
           <View
             style={{
-              backgroundColor: colors.bg,
-              borderColor: colors.border,
-              borderWidth: 1,
-              borderRadius: radius.lg,
+              backgroundColor: colors.chalk,
+              borderColor: colors.ink,
+              borderWidth: border.brutal,
               padding: 24,
               alignItems: "center",
+              marginRight: 5,
             }}
           >
-            <View
+            <Ionicons
+              name={
+                tab === "open"
+                  ? "list"
+                  : tab === "verdict"
+                  ? "hourglass"
+                  : "checkmark-done"
+              }
+              size={26}
+              color={colors.ink}
+            />
+            <Text
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: colors.bgInset,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 10,
+                marginTop: 8,
+                color: colors.ink,
+                fontSize: 14,
+                fontWeight: "900",
+                letterSpacing: -0.2,
+                textTransform: "uppercase",
               }}
             >
-              <Ionicons
-                name={
-                  tab === "open"
-                    ? "list-outline"
-                    : tab === "verdict"
-                    ? "hourglass-outline"
-                    : "checkmark-circle-outline"
-                }
-                size={22}
-                color={colors.textMuted}
-              />
-            </View>
-            <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>
               {tab === "open"
                 ? hiddenCount > 0 && allPropsForEvent.length === hiddenCount
                   ? "Nothing to see here"
@@ -462,12 +483,14 @@ export default function EventDetailScreen() {
               <Text
                 style={{
                   color: colors.textMuted,
-                  fontSize: 13,
+                  fontSize: 12,
                   textAlign: "center",
                   marginTop: 4,
+                  fontWeight: "700",
+                  fontFamily: "Courier",
                 }}
               >
-                Tap "Add prop" to put up the first market.
+                TAP "ADD PROP" TO PUT UP THE FIRST MARKET.
               </Text>
             ) : null}
           </View>

@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 import { Friend } from "@/lib/mockData";
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
 };
 
 /**
- * Multi-select chip row: pick which friends a prop is *about*.
+ * Brutalist multi-select chips: pick which friends a prop is *about*.
  * Subjects can never see/wager on/vote on their own props.
  */
 export function SubjectTagger({ friends, selected, onChange }: Props) {
@@ -25,13 +25,14 @@ export function SubjectTagger({ friends, selected, onChange }: Props) {
     <View>
       <Text
         style={{
-          fontSize: 12,
-          fontWeight: "600",
+          fontSize: 11,
+          fontWeight: "900",
           color: colors.textMuted,
+          letterSpacing: 1.4,
           marginBottom: 8,
         }}
       >
-        About whom?
+        ABOUT WHOM?
       </Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
         {friends.map((f) => {
@@ -43,19 +44,19 @@ export function SubjectTagger({ friends, selected, onChange }: Props) {
               style={{
                 paddingHorizontal: 10,
                 paddingVertical: 6,
-                borderRadius: radius.pill,
-                borderWidth: 1,
-                borderColor: isOn ? colors.text : colors.border,
-                backgroundColor: isOn ? colors.text : colors.bg,
+                borderColor: colors.ink,
+                borderWidth: border.thick,
+                backgroundColor: isOn ? colors.ink : colors.chalk,
                 marginRight: 6,
                 marginBottom: 6,
               }}
             >
               <Text
                 style={{
-                  color: isOn ? "#FFFFFF" : colors.text,
-                  fontSize: 13,
-                  fontWeight: "600",
+                  color: isOn ? colors.chalk : colors.ink,
+                  fontSize: 12,
+                  fontWeight: "900",
+                  letterSpacing: 0.5,
                 }}
               >
                 {f.handle}
@@ -66,12 +67,15 @@ export function SubjectTagger({ friends, selected, onChange }: Props) {
       </View>
       <Text
         style={{
-          marginTop: 4,
-          fontSize: 11,
-          color: colors.textFaint,
+          marginTop: 6,
+          fontSize: 10,
+          color: colors.textMuted,
+          fontFamily: "Courier",
+          fontWeight: "900",
+          letterSpacing: 0.8,
         }}
       >
-        Tagged friends won't see this prop in their feed.
+        TAGGED FRIENDS WON'T SEE THIS PROP.
       </Text>
     </View>
   );

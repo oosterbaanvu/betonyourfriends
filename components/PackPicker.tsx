@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 import { Pack, PACKS } from "@/lib/packs";
 import { BrutalButton } from "./BrutalButton";
 
@@ -19,121 +19,136 @@ type Props = {
 
 function PackChip({ pack, onPress }: { pack: Pack; onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        backgroundColor: colors.bg,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.lg,
-        marginRight: 10,
-        width: 220,
-        overflow: "hidden",
-        opacity: pressed ? 0.95 : 1,
-      })}
+    <View
+      style={{
+        position: "relative",
+        marginRight: 12,
+        marginBottom: 6,
+      }}
     >
-      {/* Top accent stripe */}
       <View
         style={{
-          height: 4,
-          backgroundColor: pack.accent,
+          position: "absolute",
+          top: 5,
+          left: 5,
+          right: -5,
+          bottom: -5,
+          backgroundColor: colors.ink,
         }}
       />
-      <View style={{ padding: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: radius.sm,
-              backgroundColor: pack.accent,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontWeight: "800",
-                fontSize: 13,
-                letterSpacing: 0.5,
-              }}
-            >
-              {pack.monogram}
-            </Text>
-          </View>
-          {pack.adult ? (
+      <Pressable
+        onPress={onPress}
+        style={{
+          backgroundColor: colors.chalk,
+          borderColor: colors.ink,
+          borderWidth: border.brutal,
+          width: 220,
+          overflow: "hidden",
+        }}
+      >
+        <View style={{ height: 8, backgroundColor: pack.accent }} />
+        <View style={{ padding: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
               style={{
-                marginLeft: "auto",
-                backgroundColor: colors.noFaint,
-                paddingHorizontal: 6,
-                paddingVertical: 2,
-                borderRadius: radius.pill,
+                width: 40,
+                height: 40,
+                backgroundColor: pack.accent,
+                borderColor: colors.ink,
+                borderWidth: border.thick,
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <Text
                 style={{
-                  color: colors.no,
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 0.4,
+                  color: colors.chalk,
+                  fontWeight: "900",
+                  fontSize: 14,
+                  letterSpacing: 1.2,
+                  fontFamily: "Courier",
                 }}
               >
-                18+
+                {pack.monogram}
               </Text>
             </View>
-          ) : null}
-        </View>
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: "700",
-            color: colors.text,
-            marginTop: 10,
-            letterSpacing: -0.2,
-          }}
-          numberOfLines={1}
-        >
-          {pack.name}
-        </Text>
-        <Text
-          style={{
-            fontSize: 12,
-            color: colors.textMuted,
-            marginTop: 2,
-            lineHeight: 16,
-          }}
-          numberOfLines={2}
-        >
-          {pack.tagline}
-        </Text>
-        <View
-          style={{
-            marginTop: 10,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
+            {pack.adult ? (
+              <View
+                style={{
+                  marginLeft: "auto",
+                  backgroundColor: colors.blood,
+                  borderColor: colors.ink,
+                  borderWidth: border.thick,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.chalk,
+                    fontSize: 10,
+                    fontWeight: "900",
+                    letterSpacing: 0.8,
+                  }}
+                >
+                  18+
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "900",
+              color: colors.ink,
+              marginTop: 12,
+              letterSpacing: -0.3,
+              textTransform: "uppercase",
+            }}
+            numberOfLines={1}
+          >
+            {pack.name}
+          </Text>
           <Text
             style={{
               fontSize: 11,
+              color: colors.textMuted,
+              marginTop: 2,
+              lineHeight: 15,
+              fontFamily: "Courier",
               fontWeight: "700",
-              color: pack.accent,
-              letterSpacing: 0.5,
+            }}
+            numberOfLines={2}
+          >
+            {pack.tagline}
+          </Text>
+          <View
+            style={{
+              marginTop: 12,
+              flexDirection: "row",
+              alignItems: "center",
             }}
           >
-            {pack.props.length} props
-          </Text>
-          <Ionicons
-            name="arrow-forward"
-            size={12}
-            color={pack.accent}
-            style={{ marginLeft: 4 }}
-          />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "900",
+                color: pack.accent,
+                letterSpacing: 1.2,
+              }}
+            >
+              {pack.props.length} PROPS
+            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={12}
+              color={pack.accent}
+              style={{ marginLeft: 4 }}
+            />
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
@@ -159,14 +174,15 @@ function PackDetail({
   const apply = () => onApply(pack.props.filter((_, i) => selected[i]));
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bone }}>
       <View
         style={{
           paddingHorizontal: 16,
           paddingTop: 16,
           paddingBottom: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          backgroundColor: colors.chalk,
+          borderBottomColor: colors.ink,
+          borderBottomWidth: border.brutal,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
@@ -174,16 +190,26 @@ function PackDetail({
       >
         <Pressable onPress={onClose}>
           <Text
-            style={{ color: colors.textMuted, fontWeight: "600", fontSize: 15 }}
+            style={{
+              color: colors.ink,
+              fontWeight: "900",
+              fontSize: 13,
+              letterSpacing: 1.4,
+            }}
           >
-            Cancel
+            CANCEL
           </Text>
         </Pressable>
         <Pressable onPress={toggleAll}>
           <Text
-            style={{ color: colors.primary, fontWeight: "600", fontSize: 14 }}
+            style={{
+              color: colors.ink,
+              fontWeight: "900",
+              fontSize: 13,
+              letterSpacing: 1.4,
+            }}
           >
-            {allOn ? "Unselect all" : "Select all"}
+            {allOn ? "UNSELECT ALL" : "SELECT ALL"}
           </Text>
         </Pressable>
       </View>
@@ -191,20 +217,22 @@ function PackDetail({
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <View
           style={{
-            width: 56,
-            height: 56,
-            borderRadius: radius.md,
+            width: 64,
+            height: 64,
             backgroundColor: pack.accent,
+            borderColor: colors.ink,
+            borderWidth: border.brutal,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
           <Text
             style={{
-              color: "#FFFFFF",
-              fontWeight: "800",
+              color: colors.chalk,
+              fontWeight: "900",
               fontSize: 18,
-              letterSpacing: 1,
+              letterSpacing: 1.2,
+              fontFamily: "Courier",
             }}
           >
             {pack.monogram}
@@ -212,16 +240,25 @@ function PackDetail({
         </View>
         <Text
           style={{
-            fontSize: 24,
-            fontWeight: "800",
-            color: colors.text,
-            marginTop: 12,
-            letterSpacing: -0.4,
+            fontSize: 28,
+            fontWeight: "900",
+            color: colors.ink,
+            marginTop: 14,
+            letterSpacing: -0.6,
+            textTransform: "uppercase",
           }}
         >
           {pack.name}
         </Text>
-        <Text style={{ fontSize: 14, color: colors.textMuted, marginTop: 4 }}>
+        <Text
+          style={{
+            fontSize: 13,
+            color: colors.textMuted,
+            marginTop: 4,
+            fontFamily: "Courier",
+            fontWeight: "700",
+          }}
+        >
           {pack.tagline}
         </Text>
 
@@ -237,24 +274,23 @@ function PackDetail({
                 flexDirection: "row",
                 alignItems: "center",
                 paddingVertical: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.border,
+                borderBottomColor: colors.ink,
+                borderBottomWidth: border.hairline,
               }}
             >
               <View
                 style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: radius.sm,
-                  borderWidth: 1.5,
-                  borderColor: isOn ? colors.primary : colors.borderStrong,
-                  backgroundColor: isOn ? colors.primary : "transparent",
+                  width: 24,
+                  height: 24,
+                  borderColor: colors.ink,
+                  borderWidth: border.thick,
+                  backgroundColor: isOn ? pack.accent : colors.chalk,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 {isOn ? (
-                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={14} color={colors.chalk} />
                 ) : null}
               </View>
               <Text
@@ -262,8 +298,9 @@ function PackDetail({
                   flex: 1,
                   marginLeft: 12,
                   fontSize: 15,
-                  color: colors.text,
-                  fontWeight: "500",
+                  color: colors.ink,
+                  fontWeight: "700",
+                  letterSpacing: -0.2,
                 }}
               >
                 {p}
@@ -276,15 +313,15 @@ function PackDetail({
       <View
         style={{
           padding: 16,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          backgroundColor: colors.bg,
+          backgroundColor: colors.chalk,
+          borderTopColor: colors.ink,
+          borderTopWidth: border.brutal,
         }}
       >
         <BrutalButton
           label={count === 0 ? "Pick at least one" : `Add ${count} props`}
           onPress={count === 0 ? undefined : apply}
-          variant="primary"
+          variant="yes"
           fullWidth
           size="lg"
         />
@@ -326,7 +363,7 @@ export function PackPicker({ onApply }: Props) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 4, paddingRight: 16 }}
+        contentContainerStyle={{ paddingVertical: 6, paddingRight: 16 }}
       >
         {PACKS.map((p) => (
           <PackChip key={p.id} pack={p} onPress={() => tryOpen(p)} />

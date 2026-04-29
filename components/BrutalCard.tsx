@@ -1,39 +1,80 @@
 import { View, ViewProps } from "react-native";
-import { colors, radius, shadow } from "@/theme/tokens";
+import { colors, border, radius } from "@/theme/tokens";
 
 type Props = ViewProps & {
-  padding?: number;
+  bg?: keyof typeof colors;
+  /** stacked-block drop offset; 0 disables it */
+  offset?: number;
+  /** thinner card variant for dense lists */
   flat?: boolean;
+  padding?: number;
 };
 
 /**
- * Plain card surface — white, 1px border, soft drop, modest radius.
- * (Filename retained for now; behavior is the clean variant.)
+ * Brutalist card: hard 5px border + stacked-block drop. Never soft.
  */
 export function BrutalCard({
-  padding = 16,
+  bg = "chalk",
+  offset = 5,
   flat = false,
+  padding = 16,
   style,
   children,
   ...rest
 }: Props) {
+  if (flat || offset === 0) {
+    return (
+      <View
+        {...rest}
+        style={[
+          {
+            backgroundColor: colors[bg],
+            borderColor: colors.ink,
+            borderWidth: flat ? border.thick : border.brutal,
+            borderRadius: radius.none,
+            padding,
+            marginBottom: 12,
+          },
+          style,
+        ]}
+      >
+        {children}
+      </View>
+    );
+  }
   return (
     <View
-      {...rest}
-      style={[
-        {
-          backgroundColor: colors.bg,
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: radius.lg,
-          padding,
-          marginBottom: 12,
-        },
-        !flat && shadow.card,
-        style,
-      ]}
+      style={{
+        position: "relative",
+        marginRight: offset,
+        marginBottom: offset + 8,
+      }}
     >
-      {children}
+      <View
+        style={{
+          position: "absolute",
+          top: offset,
+          left: offset,
+          right: -offset,
+          bottom: -offset,
+          backgroundColor: colors.ink,
+        }}
+      />
+      <View
+        {...rest}
+        style={[
+          {
+            backgroundColor: colors[bg],
+            borderColor: colors.ink,
+            borderWidth: border.brutal,
+            borderRadius: radius.none,
+            padding,
+          },
+          style,
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 }

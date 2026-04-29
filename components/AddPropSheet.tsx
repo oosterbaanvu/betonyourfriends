@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 import { Friend } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
 import { SubjectTagger } from "./SubjectTagger";
@@ -57,7 +57,7 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
         onPress={onClose}
         style={{
           flex: 1,
-          backgroundColor: "rgba(15, 23, 42, 0.4)",
+          backgroundColor: "rgba(10, 10, 10, 0.55)",
           justifyContent: "flex-end",
         }}
       >
@@ -67,9 +67,9 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
           <Pressable onPress={() => {}}>
             <View
               style={{
-                backgroundColor: colors.bg,
-                borderTopLeftRadius: 20,
-                borderTopRightRadius: 20,
+                backgroundColor: colors.chalk,
+                borderTopColor: colors.ink,
+                borderTopWidth: border.brutal,
                 padding: 20,
                 paddingBottom: 32,
               }}
@@ -77,10 +77,9 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
               <View
                 style={{
                   alignSelf: "center",
-                  width: 36,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: colors.borderStrong,
+                  width: 44,
+                  height: 5,
+                  backgroundColor: colors.ink,
                   marginBottom: 16,
                 }}
               />
@@ -88,22 +87,23 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
               <Text
                 style={{
                   fontSize: 11,
-                  fontWeight: "700",
+                  fontWeight: "900",
                   color: colors.textMuted,
-                  letterSpacing: 1.2,
-                  textTransform: "uppercase",
+                  letterSpacing: 1.6,
+                  fontFamily: "Courier",
                   marginBottom: 4,
                 }}
               >
-                Add prop
+                ADD PROP
               </Text>
               <Text
                 style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                  letterSpacing: -0.3,
+                  fontSize: 22,
+                  fontWeight: "900",
+                  color: colors.ink,
+                  letterSpacing: -0.4,
                   marginBottom: 16,
+                  textTransform: "uppercase",
                 }}
               >
                 What might happen?
@@ -116,17 +116,17 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
                 placeholderTextColor={colors.textFaint}
                 multiline
                 style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: radius.md,
+                  borderColor: colors.ink,
+                  borderWidth: border.thick,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
                   fontSize: 16,
-                  fontWeight: "500",
-                  color: colors.text,
+                  fontWeight: "700",
+                  color: colors.ink,
                   minHeight: 70,
                   textAlignVertical: "top",
                   marginBottom: 18,
+                  backgroundColor: colors.bone,
                 }}
               />
 
@@ -140,26 +140,27 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
 
               <Pressable
                 onPress={canSubmit ? submit : undefined}
-                style={({ pressed }) => ({
-                  backgroundColor: canSubmit ? colors.text : colors.borderStrong,
-                  borderRadius: radius.md,
+                style={{
+                  backgroundColor: canSubmit ? colors.lime : colors.borderSoft,
+                  borderColor: colors.ink,
+                  borderWidth: border.brutal,
                   paddingVertical: 14,
                   alignItems: "center",
                   flexDirection: "row",
                   justifyContent: "center",
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                }}
               >
-                <Ionicons name="add" size={18} color="#FFFFFF" />
+                <Ionicons name="add" size={18} color={colors.ink} />
                 <Text
                   style={{
                     marginLeft: 4,
-                    color: "#FFFFFF",
-                    fontWeight: "700",
-                    fontSize: 15,
+                    color: colors.ink,
+                    fontWeight: "900",
+                    fontSize: 14,
+                    letterSpacing: 1.4,
                   }}
                 >
-                  Add to event
+                  ADD TO EVENT
                 </Text>
               </Pressable>
             </View>

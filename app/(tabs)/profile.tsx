@@ -89,7 +89,7 @@ export default function ProfileScreen() {
   );
 
   return (
-    <ScreenFrame title="Profile">
+    <ScreenFrame title="Profile" accent="violet">
       <BrutalCard padding={20}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View

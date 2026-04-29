@@ -6,7 +6,7 @@ import { BrutalCard } from "@/components/BrutalCard";
 import { BrutalButton } from "@/components/BrutalButton";
 import { PackPicker } from "@/components/PackPicker";
 import { SubjectTagger } from "@/components/SubjectTagger";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border, radius } from "@/theme/tokens";
 import { mockFriends } from "@/lib/mockData";
 
 type DraftProp = {
@@ -25,15 +25,14 @@ const PLACEHOLDERS = [
 ];
 
 const inputStyle = {
-  borderColor: colors.border,
-  borderWidth: 1,
-  backgroundColor: colors.bg,
-  borderRadius: radius.md,
+  borderColor: colors.ink,
+  borderWidth: border.thick,
+  backgroundColor: colors.bone,
   paddingHorizontal: 12,
   paddingVertical: 10,
   fontSize: 15,
-  fontWeight: "500" as const,
-  color: colors.text,
+  fontWeight: "700" as const,
+  color: colors.ink,
 };
 
 const labelStyle = {
@@ -145,7 +144,7 @@ export default function CreateScreen() {
   const canLaunch = title.trim().length > 0 && validCount > 0;
 
   return (
-    <ScreenFrame title="New event">
+    <ScreenFrame title="New event" accent="pink">
       <SectionHeader
         title="What's the event?"
         hint="Anything goes. A darts night, the playoffs, your friend's deadline. If your friends will be there, you can wager on it."

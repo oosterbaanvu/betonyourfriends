@@ -8,14 +8,14 @@ type Props = { startsInMinutes: number; status: string };
 function formatRemaining(minutes: number): string {
   if (minutes <= 0) {
     const elapsed = -minutes;
-    if (elapsed < 60) return `Live, ${Math.floor(elapsed)}m in`;
+    if (elapsed < 60) return `LIVE, ${Math.floor(elapsed)}M IN`;
     const h = Math.floor(elapsed / 60);
-    return `Live, ${h}h ${Math.floor(elapsed % 60)}m in`;
+    return `LIVE, ${h}H ${Math.floor(elapsed % 60)}M IN`;
   }
-  if (minutes < 60) return `Starts in ${Math.floor(minutes)}m`;
+  if (minutes < 60) return `STARTS IN ${Math.floor(minutes)}M`;
   const h = Math.floor(minutes / 60);
   const m = Math.floor(minutes % 60);
-  return `Starts in ${h}h ${m}m`;
+  return `STARTS IN ${h}H ${m}M`;
 }
 
 export function Countdown({ startsInMinutes, status }: Props) {
@@ -32,12 +32,20 @@ export function Countdown({ startsInMinutes, status }: Props) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <Ionicons
-        name={isLive ? "radio-outline" : "time-outline"}
-        size={14}
-        color={isLive ? colors.live : colors.textMuted}
-        style={{ marginRight: 4 }}
+        name={isLive ? "radio" : "time"}
+        size={13}
+        color={isLive ? colors.blood : colors.ink}
+        style={{ marginRight: 5 }}
       />
-      <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "600" }}>
+      <Text
+        style={{
+          color: colors.ink,
+          fontSize: 11,
+          fontWeight: "900",
+          fontFamily: "Courier",
+          letterSpacing: 1,
+        }}
+      >
         {formatRemaining(adjusted)}
       </Text>
     </View>

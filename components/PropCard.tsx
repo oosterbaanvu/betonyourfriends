@@ -1,7 +1,7 @@
 import { Pressable, Text, View, Image, Alert, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 import { MockProp } from "@/lib/mockData";
 import { asCents, impliedYesProb, impliedNoProb } from "@/lib/odds";
 import { useStore } from "@/lib/store";
@@ -15,11 +15,11 @@ function ProbabilityBar({ yesProb }: { yesProb: number }) {
   return (
     <View
       style={{
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: colors.noFaint,
-        overflow: "hidden",
+        height: 10,
+        backgroundColor: colors.no,
         flexDirection: "row",
+        borderColor: colors.ink,
+        borderWidth: border.hairline,
       }}
     >
       <View style={{ flex: yesProb, backgroundColor: colors.yes }} />
@@ -28,7 +28,7 @@ function ProbabilityBar({ yesProb }: { yesProb: number }) {
   );
 }
 
-function YesNoButton({
+function YesNoBlock({
   side,
   cents,
   onPress,
@@ -40,46 +40,60 @@ function YesNoButton({
   active?: boolean;
 }) {
   const isYes = side === "YES";
-  const fg = isYes ? colors.yes : colors.no;
-  const faint = isYes ? colors.yesFaint : colors.noFaint;
-
+  const bg = isYes ? colors.lime : colors.blood;
+  const fg = isYes ? colors.ink : colors.chalk;
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        backgroundColor: active ? fg : faint,
-        borderWidth: 1,
-        borderColor: active ? fg : faint,
-        borderRadius: radius.md,
-        paddingVertical: 12,
-        opacity: pressed ? 0.85 : 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-      })}
-    >
-      <Text
+    <Pressable onPress={onPress} style={{ flex: 1 }}>
+      <View
         style={{
-          color: active ? "#FFFFFF" : fg,
-          fontWeight: "700",
-          fontSize: 14,
-          letterSpacing: 0.3,
-          marginRight: 6,
+          position: "relative",
+          marginRight: 4,
+          marginBottom: 4,
         }}
       >
-        {side}
-      </Text>
-      <Text
-        style={{
-          color: active ? "#FFFFFF" : fg,
-          fontWeight: "700",
-          fontSize: 14,
-          fontVariant: ["tabular-nums"],
-        }}
-      >
-        {cents}
-      </Text>
+        <View
+          style={{
+            position: "absolute",
+            top: 4,
+            left: 4,
+            right: -4,
+            bottom: -4,
+            backgroundColor: colors.ink,
+          }}
+        />
+        <View
+          style={{
+            backgroundColor: bg,
+            borderColor: colors.ink,
+            borderWidth: border.brutal,
+            paddingVertical: 12,
+            alignItems: "center",
+            opacity: active ? 1 : 1,
+          }}
+        >
+          <Text
+            style={{
+              color: fg,
+              fontSize: 13,
+              fontWeight: "900",
+              letterSpacing: 1.4,
+            }}
+          >
+            {side}
+          </Text>
+          <Text
+            style={{
+              color: fg,
+              fontSize: 18,
+              fontWeight: "900",
+              fontVariant: ["tabular-nums"],
+              marginTop: 2,
+            }}
+          >
+            {cents}
+          </Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -115,106 +129,104 @@ function VoteRow({ prop }: { prop: MockProp }) {
     <View>
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 10,
+          alignSelf: "flex-start",
+          backgroundColor: colors.warnBg,
+          borderColor: colors.ink,
+          borderWidth: border.thick,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          marginBottom: 12,
         }}
       >
-        <View
+        <Text
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: colors.warnFaint,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: radius.pill,
+            color: colors.ink,
+            fontSize: 10,
+            fontWeight: "900",
+            letterSpacing: 1.4,
           }}
         >
-          <Ionicons name="hourglass-outline" size={12} color={colors.warn} />
-          <Text
-            style={{
-              marginLeft: 4,
-              color: colors.warn,
-              fontSize: 12,
-              fontWeight: "700",
-            }}
-          >
-            Awaiting verdict
-          </Text>
-        </View>
+          AWAITING VERDICT
+        </Text>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
-        <Pressable
-          onPress={() => cast("YES")}
-          style={{
-            flex: 1,
-            backgroundColor: myVote?.side === "YES" ? colors.yes : colors.yesFaint,
-            borderRadius: radius.md,
-            paddingVertical: 12,
-            alignItems: "center",
-          }}
-        >
-          <Text
+      <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+        <Pressable onPress={() => cast("YES")} style={{ flex: 1 }}>
+          <View
             style={{
-              color: myVote?.side === "YES" ? "#FFFFFF" : colors.yes,
-              fontWeight: "700",
-              fontSize: 14,
+              backgroundColor:
+                myVote?.side === "YES" ? colors.lime : colors.chalk,
+              borderColor: colors.ink,
+              borderWidth: border.thick,
+              paddingVertical: 12,
+              alignItems: "center",
             }}
           >
-            It happened
-          </Text>
+            <Text
+              style={{
+                color: colors.ink,
+                fontSize: 12,
+                fontWeight: "900",
+                letterSpacing: 1.2,
+              }}
+            >
+              IT HAPPENED
+            </Text>
+          </View>
         </Pressable>
-        <Pressable
-          onPress={() => cast("NO")}
-          style={{
-            flex: 1,
-            backgroundColor: myVote?.side === "NO" ? colors.no : colors.noFaint,
-            borderRadius: radius.md,
-            paddingVertical: 12,
-            alignItems: "center",
-          }}
-        >
-          <Text
+        <Pressable onPress={() => cast("NO")} style={{ flex: 1 }}>
+          <View
             style={{
-              color: myVote?.side === "NO" ? "#FFFFFF" : colors.no,
-              fontWeight: "700",
-              fontSize: 14,
+              backgroundColor:
+                myVote?.side === "NO" ? colors.blood : colors.chalk,
+              borderColor: colors.ink,
+              borderWidth: border.thick,
+              paddingVertical: 12,
+              alignItems: "center",
             }}
           >
-            Didn't happen
-          </Text>
+            <Text
+              style={{
+                color: myVote?.side === "NO" ? colors.chalk : colors.ink,
+                fontSize: 12,
+                fontWeight: "900",
+                letterSpacing: 1.2,
+              }}
+            >
+              DIDN'T HAPPEN
+            </Text>
+          </View>
         </Pressable>
       </View>
 
       <Pressable
         onPress={pickPhoto}
         style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderStyle: "dashed",
-          borderRadius: radius.md,
-          paddingVertical: 14,
+          borderColor: colors.ink,
+          borderWidth: border.thick,
+          backgroundColor: colors.bone,
+          paddingVertical: 12,
           alignItems: "center",
-          marginBottom: 10,
+          marginBottom: 12,
           flexDirection: "row",
           justifyContent: "center",
         }}
       >
         <Ionicons
-          name="camera-outline"
-          size={16}
-          color={colors.textMuted}
+          name="camera"
+          size={14}
+          color={colors.ink}
           style={{ marginRight: 6 }}
         />
         <Text
           style={{
-            color: colors.textMuted,
-            fontWeight: "600",
-            fontSize: 13,
+            color: colors.ink,
+            fontWeight: "900",
+            fontSize: 12,
+            letterSpacing: 1.2,
           }}
         >
-          {myVote?.photoUri ? "Replace photo evidence" : "Add photo evidence"}
+          {myVote?.photoUri ? "REPLACE EVIDENCE" : "ATTACH EVIDENCE"}
         </Text>
       </Pressable>
 
@@ -224,16 +236,26 @@ function VoteRow({ prop }: { prop: MockProp }) {
           style={{
             width: "100%",
             height: 160,
-            borderRadius: radius.md,
-            marginBottom: 10,
-            backgroundColor: colors.bgInset,
+            borderColor: colors.ink,
+            borderWidth: border.thick,
+            marginBottom: 12,
+            backgroundColor: colors.bone,
           }}
           resizeMode="cover"
         />
       ) : null}
 
-      <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "500" }}>
-        {totalCast} of {prop.voterCount} voted, {prop.votes.yes} yes / {prop.votes.no} no
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontSize: 11,
+          fontWeight: "900",
+          letterSpacing: 1.2,
+          fontFamily: "Courier",
+        }}
+      >
+        {totalCast} OF {prop.voterCount} VOTED, {prop.votes.yes} YES /{" "}
+        {prop.votes.no} NO
       </Text>
     </View>
   );
@@ -243,55 +265,60 @@ function ResolvedRow({ prop }: { prop: MockProp }) {
   const { positions } = useStore();
   const pos = positions[prop.id];
   const won = pos && prop.resolvedSide === pos.side;
-  const resolvedColor = prop.resolvedSide === "YES" ? colors.yes : colors.no;
-  const resolvedFaint = prop.resolvedSide === "YES" ? colors.yesFaint : colors.noFaint;
+  const isYes = prop.resolvedSide === "YES";
   return (
     <View>
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 8,
+          alignSelf: "flex-start",
+          backgroundColor: isYes ? colors.lime : colors.blood,
+          borderColor: colors.ink,
+          borderWidth: border.thick,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          marginBottom: 10,
         }}
       >
-        <View
+        <Text
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: resolvedFaint,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: radius.pill,
+            color: isYes ? colors.ink : colors.chalk,
+            fontSize: 10,
+            fontWeight: "900",
+            letterSpacing: 1.4,
           }}
         >
-          <Ionicons name="checkmark-circle" size={12} color={resolvedColor} />
-          <Text
-            style={{
-              marginLeft: 4,
-              color: resolvedColor,
-              fontSize: 12,
-              fontWeight: "700",
-            }}
-          >
-            Resolved {prop.resolvedSide}
-          </Text>
-        </View>
+          RESOLVED {prop.resolvedSide}
+        </Text>
       </View>
       {pos ? (
-        <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "500" }}>
-          You bet {pos.amount} on {pos.side},{" "}
+        <Text
+          style={{
+            color: colors.ink,
+            fontSize: 13,
+            fontWeight: "700",
+            fontFamily: "Courier",
+          }}
+        >
+          YOU BET {pos.amount} ON {pos.side},{" "}
           <Text
             style={{
               color: won ? colors.yes : colors.no,
-              fontWeight: "700",
+              fontWeight: "900",
             }}
           >
-            {won ? "won" : "lost"}
+            {won ? "WON" : "LOST"}
           </Text>
         </Text>
       ) : (
-        <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "500" }}>
-          You didn't bet on this one.
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontSize: 12,
+            fontFamily: "Courier",
+            fontWeight: "700",
+          }}
+        >
+          YOU DIDN'T BET ON THIS ONE.
         </Text>
       )}
     </View>
@@ -306,97 +333,131 @@ export function PropCard({ prop, onTapWager }: Props) {
   const volume = prop.yesPool + prop.noPool;
 
   return (
-    <View
-      style={{
-        backgroundColor: colors.bg,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.lg,
-        padding: 16,
-        marginBottom: 12,
-      }}
-    >
-      <Text
+    <View style={{ position: "relative", marginRight: 5, marginBottom: 14 }}>
+      <View
         style={{
-          fontSize: 16,
-          fontWeight: "700",
-          color: colors.text,
-          letterSpacing: -0.2,
-          lineHeight: 22,
+          position: "absolute",
+          top: 5,
+          left: 5,
+          right: -5,
+          bottom: -5,
+          backgroundColor: colors.ink,
+        }}
+      />
+      <View
+        style={{
+          backgroundColor: colors.chalk,
+          borderColor: colors.ink,
+          borderWidth: border.brutal,
+          padding: 16,
         }}
       >
-        {prop.description}
-      </Text>
+        <Text
+          style={{
+            fontSize: 17,
+            fontWeight: "900",
+            color: colors.ink,
+            letterSpacing: -0.3,
+            lineHeight: 22,
+            textTransform: "uppercase",
+          }}
+        >
+          {prop.description}
+        </Text>
 
-      {prop.status === "OPEN" ? (
-        <>
-          <View style={{ marginTop: 14, marginBottom: 12 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 6,
-              }}
-            >
-              <Text style={{ color: colors.yes, fontSize: 12, fontWeight: "700" }}>
-                YES {asCents(yesProb)}
-              </Text>
-              <Text style={{ color: colors.no, fontSize: 12, fontWeight: "700" }}>
-                NO {asCents(noProb)}
-              </Text>
-            </View>
-            <ProbabilityBar yesProb={yesProb} />
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <YesNoButton
-              side="YES"
-              cents={asCents(yesProb)}
-              active={pos?.side === "YES"}
-              onPress={() => onTapWager(prop, "YES")}
-            />
-            <YesNoButton
-              side="NO"
-              cents={asCents(noProb)}
-              active={pos?.side === "NO"}
-              onPress={() => onTapWager(prop, "NO")}
-            />
-          </View>
-
-          <View
-            style={{
-              marginTop: 12,
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text
-              style={{ color: colors.textFaint, fontSize: 12, fontWeight: "500" }}
-            >
-              Volume {volume.toLocaleString()}
-            </Text>
-            {pos ? (
-              <Text
+        {prop.status === "OPEN" ? (
+          <>
+            <View style={{ marginTop: 14, marginBottom: 12 }}>
+              <View
                 style={{
-                  color: pos.side === "YES" ? colors.yes : colors.no,
-                  fontSize: 12,
-                  fontWeight: "700",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 6,
                 }}
               >
-                You: {pos.amount} on {pos.side}
+                <Text
+                  style={{
+                    color: colors.yes,
+                    fontSize: 11,
+                    fontWeight: "900",
+                    letterSpacing: 1.2,
+                  }}
+                >
+                  YES {asCents(yesProb)}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.no,
+                    fontSize: 11,
+                    fontWeight: "900",
+                    letterSpacing: 1.2,
+                  }}
+                >
+                  NO {asCents(noProb)}
+                </Text>
+              </View>
+              <ProbabilityBar yesProb={yesProb} />
+            </View>
+
+            <View style={{ flexDirection: "row" }}>
+              <YesNoBlock
+                side="YES"
+                cents={asCents(yesProb)}
+                active={pos?.side === "YES"}
+                onPress={() => onTapWager(prop, "YES")}
+              />
+              <View style={{ width: 4 }} />
+              <YesNoBlock
+                side="NO"
+                cents={asCents(noProb)}
+                active={pos?.side === "NO"}
+                onPress={() => onTapWager(prop, "NO")}
+              />
+            </View>
+
+            <View
+              style={{
+                marginTop: 10,
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.textMuted,
+                  fontSize: 11,
+                  fontWeight: "900",
+                  fontFamily: "Courier",
+                  letterSpacing: 1.2,
+                }}
+              >
+                VOL {volume.toLocaleString()}
               </Text>
-            ) : null}
+              {pos ? (
+                <Text
+                  style={{
+                    color: pos.side === "YES" ? colors.yes : colors.no,
+                    fontSize: 11,
+                    fontWeight: "900",
+                    fontFamily: "Courier",
+                    letterSpacing: 1.2,
+                  }}
+                >
+                  YOU: {pos.amount} ON {pos.side}
+                </Text>
+              ) : null}
+            </View>
+          </>
+        ) : prop.status === "AWAITING_VERDICT" ? (
+          <View style={{ marginTop: 14 }}>
+            <VoteRow prop={prop} />
           </View>
-        </>
-      ) : prop.status === "AWAITING_VERDICT" ? (
-        <View style={{ marginTop: 14 }}>
-          <VoteRow prop={prop} />
-        </View>
-      ) : (
-        <View style={{ marginTop: 14 }}>
-          <ResolvedRow prop={prop} />
-        </View>
-      )}
+        ) : (
+          <View style={{ marginTop: 14 }}>
+            <ResolvedRow prop={prop} />
+          </View>
+        )}
+      </View>
     </View>
   );
 }

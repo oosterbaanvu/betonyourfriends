@@ -9,7 +9,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { colors, radius } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 import { MockProp } from "@/lib/mockData";
 import { asCents, estimatePayout, impliedYesProb, impliedNoProb } from "@/lib/odds";
 import { useStore } from "@/lib/store";
@@ -43,33 +43,27 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
   const gross = estimatePayout(prop, side, stake);
   const net = gross - stake;
   const tooMuch = stake > balance;
+  const sideColor = side === "YES" ? colors.lime : colors.blood;
+  const sideFg = side === "YES" ? colors.ink : colors.chalk;
 
   const confirm = () => {
     if (stake <= 0) return;
     const result = placeBet(prop.id, side, stake);
     if (!result.ok) {
-      if (Platform.OS !== "web") {
-        Alert.alert("Couldn't place bet", result.reason);
-      } else if (typeof window !== "undefined") {
-        window.alert(result.reason);
-      }
+      if (Platform.OS !== "web") Alert.alert("Couldn't place bet", result.reason);
+      else if (typeof window !== "undefined") window.alert(result.reason);
       return;
     }
     onClose();
   };
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
         style={{
           flex: 1,
-          backgroundColor: "rgba(15, 23, 42, 0.4)",
+          backgroundColor: "rgba(10, 10, 10, 0.55)",
           justifyContent: "flex-end",
         }}
       >
@@ -79,9 +73,9 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
           <Pressable onPress={() => {}}>
             <View
               style={{
-                backgroundColor: colors.bg,
-                borderTopLeftRadius: 20,
-                borderTopRightRadius: 20,
+                backgroundColor: colors.chalk,
+                borderTopColor: colors.ink,
+                borderTopWidth: border.brutal,
                 padding: 20,
                 paddingBottom: 32,
               }}
@@ -89,105 +83,127 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
               <View
                 style={{
                   alignSelf: "center",
-                  width: 36,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: colors.borderStrong,
-                  marginBottom: 14,
+                  width: 44,
+                  height: 5,
+                  backgroundColor: colors.ink,
+                  marginBottom: 16,
                 }}
               />
 
               <Text
                 style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  color: colors.text,
-                  marginBottom: 4,
-                  letterSpacing: -0.2,
+                  fontSize: 11,
+                  fontWeight: "900",
+                  color: colors.textMuted,
+                  letterSpacing: 1.6,
+                  fontFamily: "Courier",
+                  marginBottom: 6,
                 }}
-                numberOfLines={2}
+              >
+                PLACING WAGER
+              </Text>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "900",
+                  color: colors.ink,
+                  marginBottom: 4,
+                  letterSpacing: -0.4,
+                  textTransform: "uppercase",
+                  lineHeight: 27,
+                }}
+                numberOfLines={3}
               >
                 {prop.description}
               </Text>
               <Text
                 style={{
                   color: colors.textMuted,
-                  fontSize: 13,
-                  fontWeight: "500",
+                  fontSize: 11,
+                  fontWeight: "900",
+                  fontFamily: "Courier",
                   marginBottom: 18,
+                  letterSpacing: 1,
                 }}
               >
-                Balance {balance.toLocaleString()} tokens
+                BALANCE {balance.toLocaleString()}
               </Text>
 
-              {/* Yes/No segmented control */}
+              {/* Yes/No segmented */}
               <View
                 style={{
                   flexDirection: "row",
-                  backgroundColor: colors.bgInset,
-                  borderRadius: radius.md,
-                  padding: 4,
+                  borderColor: colors.ink,
+                  borderWidth: border.thick,
                   marginBottom: 18,
                 }}
               >
-                {(["YES", "NO"] as const).map((s) => {
+                {(["YES", "NO"] as const).map((s, i) => {
                   const isActive = side === s;
-                  const fg = s === "YES" ? colors.yes : colors.no;
+                  const bg =
+                    s === "YES"
+                      ? isActive
+                        ? colors.lime
+                        : colors.chalk
+                      : isActive
+                      ? colors.blood
+                      : colors.chalk;
+                  const fg =
+                    s === "NO" && isActive ? colors.chalk : colors.ink;
                   return (
                     <Pressable
                       key={s}
                       onPress={() => setSide(s)}
                       style={{
                         flex: 1,
-                        backgroundColor: isActive ? colors.bg : "transparent",
-                        borderRadius: radius.sm,
-                        paddingVertical: 8,
+                        backgroundColor: bg,
+                        paddingVertical: 12,
                         alignItems: "center",
+                        borderRightWidth: i === 0 ? border.thick : 0,
+                        borderRightColor: colors.ink,
                       }}
                     >
                       <Text
                         style={{
-                          color: isActive ? fg : colors.textMuted,
-                          fontWeight: "700",
+                          color: fg,
+                          fontWeight: "900",
                           fontSize: 14,
+                          letterSpacing: 1.4,
                         }}
                       >
-                        {s}{" "}
-                        <Text style={{ fontVariant: ["tabular-nums"] }}>
-                          {asCents(s === "YES" ? yesProb : noProb)}
-                        </Text>
+                        {s} {asCents(s === "YES" ? yesProb : noProb)}
                       </Text>
                     </Pressable>
                   );
                 })}
               </View>
 
-              {/* Stake input */}
               <Text
                 style={{
-                  fontSize: 12,
-                  fontWeight: "600",
+                  fontSize: 11,
+                  fontWeight: "900",
                   color: colors.textMuted,
+                  letterSpacing: 1.4,
                   marginBottom: 6,
                 }}
               >
-                Stake
+                STAKE
               </Text>
               <TextInput
                 value={stakeText}
                 onChangeText={setStakeText}
                 keyboardType="number-pad"
                 style={{
-                  borderWidth: 1,
-                  borderColor: tooMuch ? colors.no : colors.border,
-                  borderRadius: radius.md,
+                  borderColor: tooMuch ? colors.blood : colors.ink,
+                  borderWidth: border.thick,
                   paddingHorizontal: 14,
                   paddingVertical: 14,
-                  fontSize: 22,
-                  fontWeight: "700",
-                  color: colors.text,
+                  fontSize: 26,
+                  fontWeight: "900",
+                  color: colors.ink,
                   fontVariant: ["tabular-nums"],
                   marginBottom: 10,
+                  backgroundColor: colors.bone,
                 }}
               />
 
@@ -200,12 +216,19 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                       flex: 1,
                       marginRight: 6,
                       paddingVertical: 8,
-                      backgroundColor: colors.bgInset,
-                      borderRadius: radius.sm,
+                      backgroundColor: colors.bone,
+                      borderColor: colors.ink,
+                      borderWidth: border.thick,
                       alignItems: "center",
                     }}
                   >
-                    <Text style={{ fontWeight: "600", color: colors.text, fontSize: 13 }}>
+                    <Text
+                      style={{
+                        fontWeight: "900",
+                        color: colors.ink,
+                        fontSize: 13,
+                      }}
+                    >
                       {q}
                     </Text>
                   </Pressable>
@@ -215,13 +238,21 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                   style={{
                     flex: 1,
                     paddingVertical: 8,
-                    backgroundColor: colors.bgInset,
-                    borderRadius: radius.sm,
+                    backgroundColor: colors.ink,
+                    borderColor: colors.ink,
+                    borderWidth: border.thick,
                     alignItems: "center",
                   }}
                 >
-                  <Text style={{ fontWeight: "700", color: colors.text, fontSize: 13 }}>
-                    Max
+                  <Text
+                    style={{
+                      fontWeight: "900",
+                      color: colors.chalk,
+                      fontSize: 13,
+                      letterSpacing: 1.2,
+                    }}
+                  >
+                    MAX
                   </Text>
                 </Pressable>
               </View>
@@ -229,68 +260,24 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
               {/* Payout preview */}
               <View
                 style={{
-                  backgroundColor: colors.bgInset,
-                  borderRadius: radius.md,
+                  backgroundColor: colors.bone,
+                  borderColor: colors.ink,
+                  borderWidth: border.thick,
                   padding: 14,
                   marginBottom: 18,
                 }}
               >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 6,
-                  }}
-                >
-                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>
-                    Implied odds
-                  </Text>
-                  <Text
-                    style={{
-                      fontWeight: "700",
-                      color: colors.text,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {cents}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 6,
-                  }}
-                >
-                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>
-                    If {side} hits, you receive
-                  </Text>
-                  <Text
-                    style={{
-                      fontWeight: "700",
-                      color: colors.text,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {Math.round(gross).toLocaleString()}
-                  </Text>
-                </View>
-                <View
-                  style={{ flexDirection: "row", justifyContent: "space-between" }}
-                >
-                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>
-                    Profit
-                  </Text>
-                  <Text
-                    style={{
-                      fontWeight: "700",
-                      color: net > 0 ? colors.yes : colors.text,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    +{Math.round(net).toLocaleString()}
-                  </Text>
-                </View>
+                <Row label="IMPLIED" value={cents} />
+                <Row
+                  label={`IF ${side} HITS`}
+                  value={Math.round(gross).toLocaleString()}
+                />
+                <Row
+                  label="PROFIT"
+                  value={`+${Math.round(net).toLocaleString()}`}
+                  valueColor={net > 0 ? colors.yes : colors.ink}
+                  noBorder
+                />
               </View>
 
               <Pressable
@@ -298,28 +285,26 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                 disabled={stake <= 0 || tooMuch}
                 style={{
                   backgroundColor:
-                    stake <= 0 || tooMuch
-                      ? colors.borderStrong
-                      : side === "YES"
-                      ? colors.yes
-                      : colors.no,
-                  borderRadius: radius.md,
+                    stake <= 0 || tooMuch ? colors.borderSoft : sideColor,
+                  borderColor: colors.ink,
+                  borderWidth: border.brutal,
                   paddingVertical: 16,
                   alignItems: "center",
                 }}
               >
                 <Text
                   style={{
-                    color: "#FFFFFF",
-                    fontWeight: "700",
-                    fontSize: 16,
+                    color: stake <= 0 || tooMuch ? colors.ink : sideFg,
+                    fontWeight: "900",
+                    fontSize: 14,
+                    letterSpacing: 1.4,
                   }}
                 >
                   {tooMuch
-                    ? "Not enough tokens"
+                    ? "NOT ENOUGH TOKENS"
                     : stake <= 0
-                    ? "Enter a stake"
-                    : `Confirm — Bet ${stake.toLocaleString()} on ${side}`}
+                    ? "ENTER A STAKE"
+                    : `CONFIRM — BET ${stake.toLocaleString()} ON ${side}`}
                 </Text>
               </Pressable>
             </View>
@@ -327,5 +312,51 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
         </KeyboardAvoidingView>
       </Pressable>
     </Modal>
+  );
+}
+
+function Row({
+  label,
+  value,
+  valueColor = colors.ink,
+  noBorder,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  noBorder?: boolean;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingVertical: 6,
+        borderBottomWidth: noBorder ? 0 : border.hairline,
+        borderBottomColor: colors.borderSoft,
+      }}
+    >
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontSize: 11,
+          fontWeight: "900",
+          letterSpacing: 1.2,
+          fontFamily: "Courier",
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          color: valueColor,
+          fontWeight: "900",
+          fontSize: 14,
+          fontVariant: ["tabular-nums"],
+        }}
+      >
+        {value}
+      </Text>
+    </View>
   );
 }
