@@ -48,6 +48,12 @@ type Store = {
     photoUri?: string
   ) => { ok: true } | { ok: false; reason: string };
 
+  addProp: (
+    eventId: string,
+    description: string,
+    subjectUserIds: string[]
+  ) => { ok: true; id: string } | { ok: false; reason: string };
+
   /** Helper: prop by id. */
   propById: (id: string) => MockProp | undefined;
 };
@@ -164,6 +170,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [props, votes]
   );
 
+  const addProp: Store["addProp"] = useCallback(
+    (eventId, description, subjectUserIds) => {
+      const trimmed = description.trim();
+      if (!trimmed) return { ok: false, reason: "Description is required" };
+
+      // Voter pool excludes subjects (anti-self-bet). Default to 5 for the demo.
+      const voterCount = Math.max(3, 7 - subjectUserIds.length);
+      const newProp: MockProp = {
+        id: `prp_${Date.now().toString(36)}`,
+        eventId,
+        description: trimmed,
+        subjectUserIds,
+        status: "OPEN",
+        yesPool: 50,
+        noPool: 50,
+        votes: { yes: 0, no: 0 },
+        voterCount,
+      };
+      setProps((prev) => [...prev, newProp]);
+      return { ok: true, id: newProp.id };
+    },
+    []
+  );
+
   // Settle the user's position whenever a prop transitions to RESOLVED.
   // We do it lazily — the moment we render a Resolved card we pay out via this hook.
   // Settlement is idempotent because we read it from a derived flag on Position.
@@ -184,9 +214,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       votes,
       placeBet,
       castVote,
+      addProp,
       propById,
     }),
-    [balance, props, positions, votes, placeBet, castVote, propById]
+    [balance, props, positions, votes, placeBet, castVote, addProp, propById]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

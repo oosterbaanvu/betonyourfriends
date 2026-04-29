@@ -1,31 +1,6 @@
 import { Tabs } from "expo-router";
-import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/theme/tokens";
-
-type IconProps = { focused: boolean; glyph: string };
-
-function TabGlyph({ focused, glyph }: IconProps) {
-  return (
-    <View
-      style={{
-        width: 28,
-        height: 28,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: "600",
-          color: focused ? colors.text : colors.textFaint,
-        }}
-      >
-        {glyph}
-      </Text>
-    </View>
-  );
-}
 
 export default function TabsLayout() {
   return (
@@ -54,21 +29,39 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Markets",
-          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="◇" />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "trending-up" : "trending-up-outline"}
+              size={22}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
           title: "Create",
-          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="+" />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "add-circle" : "add-circle-outline"}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="○" />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "person-circle" : "person-circle-outline"}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>

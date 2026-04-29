@@ -1,5 +1,6 @@
 import { Pressable, Text, View, Image, Alert, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, radius } from "@/theme/tokens";
 import { MockProp } from "@/lib/mockData";
 import { asCents, impliedYesProb, impliedNoProb } from "@/lib/odds";
@@ -21,12 +22,7 @@ function ProbabilityBar({ yesProb }: { yesProb: number }) {
         flexDirection: "row",
       }}
     >
-      <View
-        style={{
-          flex: yesProb,
-          backgroundColor: colors.yes,
-        }}
-      />
+      <View style={{ flex: yesProb, backgroundColor: colors.yes }} />
       <View style={{ flex: 1 - yesProb }} />
     </View>
   );
@@ -126,14 +122,24 @@ function VoteRow({ prop }: { prop: MockProp }) {
       >
         <View
           style={{
+            flexDirection: "row",
+            alignItems: "center",
             backgroundColor: colors.warnFaint,
             paddingHorizontal: 8,
             paddingVertical: 3,
             borderRadius: radius.pill,
           }}
         >
-          <Text style={{ color: colors.warn, fontSize: 12, fontWeight: "700" }}>
-            ⏱ Awaiting verdict
+          <Ionicons name="hourglass-outline" size={12} color={colors.warn} />
+          <Text
+            style={{
+              marginLeft: 4,
+              color: colors.warn,
+              fontSize: 12,
+              fontWeight: "700",
+            }}
+          >
+            Awaiting verdict
           </Text>
         </View>
       </View>
@@ -191,8 +197,16 @@ function VoteRow({ prop }: { prop: MockProp }) {
           paddingVertical: 14,
           alignItems: "center",
           marginBottom: 10,
+          flexDirection: "row",
+          justifyContent: "center",
         }}
       >
+        <Ionicons
+          name="camera-outline"
+          size={16}
+          color={colors.textMuted}
+          style={{ marginRight: 6 }}
+        />
         <Text
           style={{
             color: colors.textMuted,
@@ -200,7 +214,7 @@ function VoteRow({ prop }: { prop: MockProp }) {
             fontSize: 13,
           }}
         >
-          {myVote?.photoUri ? "📷 Replace photo evidence" : "📷 Add photo evidence"}
+          {myVote?.photoUri ? "Replace photo evidence" : "Add photo evidence"}
         </Text>
       </Pressable>
 
@@ -219,7 +233,7 @@ function VoteRow({ prop }: { prop: MockProp }) {
       ) : null}
 
       <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "500" }}>
-        {totalCast} of {prop.voterCount} voted · {prop.votes.yes} yes / {prop.votes.no} no
+        {totalCast} of {prop.voterCount} voted, {prop.votes.yes} yes / {prop.votes.no} no
       </Text>
     </View>
   );
@@ -229,6 +243,8 @@ function ResolvedRow({ prop }: { prop: MockProp }) {
   const { positions } = useStore();
   const pos = positions[prop.id];
   const won = pos && prop.resolvedSide === pos.side;
+  const resolvedColor = prop.resolvedSide === "YES" ? colors.yes : colors.no;
+  const resolvedFaint = prop.resolvedSide === "YES" ? colors.yesFaint : colors.noFaint;
   return (
     <View>
       <View
@@ -240,27 +256,30 @@ function ResolvedRow({ prop }: { prop: MockProp }) {
       >
         <View
           style={{
-            backgroundColor:
-              prop.resolvedSide === "YES" ? colors.yesFaint : colors.noFaint,
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: resolvedFaint,
             paddingHorizontal: 8,
             paddingVertical: 3,
             borderRadius: radius.pill,
           }}
         >
+          <Ionicons name="checkmark-circle" size={12} color={resolvedColor} />
           <Text
             style={{
-              color: prop.resolvedSide === "YES" ? colors.yes : colors.no,
+              marginLeft: 4,
+              color: resolvedColor,
               fontSize: 12,
               fontWeight: "700",
             }}
           >
-            ✓ Resolved {prop.resolvedSide}
+            Resolved {prop.resolvedSide}
           </Text>
         </View>
       </View>
       {pos ? (
         <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "500" }}>
-          You bet {pos.amount}⚡ on {pos.side} ·{" "}
+          You bet {pos.amount} on {pos.side},{" "}
           <Text
             style={{
               color: won ? colors.yes : colors.no,
@@ -319,14 +338,10 @@ export function PropCard({ prop, onTapWager }: Props) {
                 marginBottom: 6,
               }}
             >
-              <Text
-                style={{ color: colors.yes, fontSize: 12, fontWeight: "700" }}
-              >
+              <Text style={{ color: colors.yes, fontSize: 12, fontWeight: "700" }}>
                 YES {asCents(yesProb)}
               </Text>
-              <Text
-                style={{ color: colors.no, fontSize: 12, fontWeight: "700" }}
-              >
+              <Text style={{ color: colors.no, fontSize: 12, fontWeight: "700" }}>
                 NO {asCents(noProb)}
               </Text>
             </View>
@@ -358,7 +373,7 @@ export function PropCard({ prop, onTapWager }: Props) {
             <Text
               style={{ color: colors.textFaint, fontSize: 12, fontWeight: "500" }}
             >
-              Volume {volume.toLocaleString()}⚡
+              Volume {volume.toLocaleString()}
             </Text>
             {pos ? (
               <Text
@@ -368,7 +383,7 @@ export function PropCard({ prop, onTapWager }: Props) {
                   fontWeight: "700",
                 }}
               >
-                You: {pos.amount}⚡ on {pos.side}
+                You: {pos.amount} on {pos.side}
               </Text>
             ) : null}
           </View>

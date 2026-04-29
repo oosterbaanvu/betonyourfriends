@@ -1,5 +1,6 @@
 import { View, Text, TextInput, Pressable } from "react-native";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { ScreenFrame } from "@/components/ScreenFrame";
 import { BrutalCard } from "@/components/BrutalCard";
 import { BrutalButton } from "@/components/BrutalButton";
@@ -13,6 +14,15 @@ type DraftProp = {
   subjectIds: string[];
   fromPack?: string;
 };
+
+const PLACEHOLDERS = [
+  "Friday night darts at The Anchor",
+  "Lakers vs Celtics",
+  "Sarah finishes her thesis",
+  "Saturday bar crawl",
+  "Tom's birthday",
+  "Kitchen Renovation Race",
+];
 
 const inputStyle = {
   borderColor: colors.border,
@@ -28,17 +38,57 @@ const inputStyle = {
 
 const labelStyle = {
   fontSize: 12,
-  fontWeight: "600" as const,
+  fontWeight: "700" as const,
   color: colors.textMuted,
+  letterSpacing: 0.6,
   marginBottom: 6,
+  textTransform: "uppercase" as const,
 };
 
-function SectionHeader({ title, hint }: { title: string; hint?: string }) {
+function SectionHeader({
+  title,
+  hint,
+  count,
+}: {
+  title: string;
+  hint?: string;
+  count?: number;
+}) {
   return (
-    <View style={{ marginBottom: 10, marginTop: 6 }}>
-      <Text style={{ fontSize: 15, fontWeight: "700", color: colors.text }}>
-        {title}
-      </Text>
+    <View style={{ marginBottom: 10, marginTop: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: "800",
+            color: colors.text,
+            letterSpacing: -0.2,
+          }}
+        >
+          {title}
+        </Text>
+        {typeof count === "number" ? (
+          <View
+            style={{
+              marginLeft: 8,
+              backgroundColor: colors.bgInset,
+              paddingHorizontal: 7,
+              paddingVertical: 1,
+              borderRadius: radius.pill,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: 11,
+                fontWeight: "700",
+              }}
+            >
+              {count}
+            </Text>
+          </View>
+        ) : null}
+      </View>
       {hint ? (
         <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
           {hint}
@@ -54,6 +104,11 @@ export default function CreateScreen() {
   const [props, setProps] = useState<DraftProp[]>([
     { description: "", subjectIds: [] },
   ]);
+
+  const placeholder = useMemo(
+    () => PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)],
+    []
+  );
 
   const addProp = () =>
     setProps((p) => [...p, { description: "", subjectIds: [] }]);
@@ -75,30 +130,32 @@ export default function CreateScreen() {
       fromPack: packName,
     }));
     setProps((p) => {
-      // Drop the leading empty draft if it's still untouched.
-      if (p.length === 1 && p[0].description.trim() === "" && p[0].subjectIds.length === 0) {
+      if (
+        p.length === 1 &&
+        p[0].description.trim() === "" &&
+        p[0].subjectIds.length === 0
+      ) {
         return drafts;
       }
       return [...p, ...drafts];
     });
   };
 
-  const totalProps = props.length;
   const validCount = props.filter((p) => p.description.trim().length > 0).length;
   const canLaunch = title.trim().length > 0 && validCount > 0;
 
   return (
-    <ScreenFrame title="New Market">
+    <ScreenFrame title="New event">
       <SectionHeader
-        title="Event details"
-        hint="The thing that's going to happen. Or maybe not."
+        title="What's the event?"
+        hint="Anything goes. A darts night, the playoffs, your friend's deadline. If your friends will be there, you can wager on it."
       />
       <BrutalCard>
         <Text style={labelStyle}>Title</Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
-          placeholder="Saturday bar crawl"
+          placeholder={placeholder}
           placeholderTextColor={colors.textFaint}
           style={inputStyle}
         />
@@ -126,8 +183,9 @@ export default function CreateScreen() {
       <View style={{ height: 8 }} />
 
       <SectionHeader
-        title={`Predictions${totalProps ? `  ·  ${totalProps}` : ""}`}
-        hint='One question per card, e.g. "Mark spills his drink"'
+        title="Predictions"
+        hint="One question per card. You can keep adding props after the event launches too."
+        count={props.length}
       />
 
       {props.map((p, i) => (
@@ -137,7 +195,7 @@ export default function CreateScreen() {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 6,
+              marginBottom: 8,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -166,9 +224,19 @@ export default function CreateScreen() {
               ) : null}
             </View>
             {props.length > 1 ? (
-              <Pressable onPress={() => removeProp(i)}>
+              <Pressable
+                onPress={() => removeProp(i)}
+                hitSlop={8}
+                style={{ flexDirection: "row", alignItems: "center" }}
+              >
+                <Ionicons name="close" size={14} color={colors.no} />
                 <Text
-                  style={{ color: colors.no, fontSize: 13, fontWeight: "600" }}
+                  style={{
+                    marginLeft: 2,
+                    color: colors.no,
+                    fontSize: 13,
+                    fontWeight: "600",
+                  }}
                 >
                   Remove
                 </Text>
@@ -178,7 +246,7 @@ export default function CreateScreen() {
           <TextInput
             value={p.description}
             onChangeText={(v) => updateText(i, v)}
-            placeholder='e.g. "Mark spills his drink"'
+            placeholder='e.g. "Dave hits a 180 in the first leg"'
             placeholderTextColor={colors.textFaint}
             multiline
             style={[inputStyle, { minHeight: 56, textAlignVertical: "top" }]}
@@ -195,7 +263,7 @@ export default function CreateScreen() {
       ))}
 
       <BrutalButton
-        label="+ Add another prop"
+        label="Add another prop"
         onPress={addProp}
         variant="secondary"
         fullWidth
@@ -204,7 +272,11 @@ export default function CreateScreen() {
       <View style={{ height: 12 }} />
 
       <BrutalButton
-        label={canLaunch ? `Launch market · ${validCount} props` : "Add a title and one prop to launch"}
+        label={
+          canLaunch
+            ? `Launch event with ${validCount} prop${validCount === 1 ? "" : "s"}`
+            : "Add a title and one prop to launch"
+        }
         onPress={canLaunch ? () => {} : undefined}
         variant="primary"
         fullWidth
