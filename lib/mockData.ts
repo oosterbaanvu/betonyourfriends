@@ -30,6 +30,19 @@ export type MockProp = {
 
 export const CURRENT_USER_ID = "u_jules";
 
+export type Friend = { id: string; handle: string };
+
+/** Mock friend group used for subject tagging in the Create flow. */
+export const mockFriends: Friend[] = [
+  { id: "u_jules", handle: "@jules" },
+  { id: "u_mark", handle: "@mark" },
+  { id: "u_romi", handle: "@romi" },
+  { id: "u_dave", handle: "@dave" },
+  { id: "u_steve", handle: "@bigsteve" },
+  { id: "u_sarah", handle: "@sarah" },
+  { id: "u_priya", handle: "@priya" },
+];
+
 export const mockEvents: MockEvent[] = [
   {
     id: "evt_1",
