@@ -1,9 +1,11 @@
 import { View, Text, Pressable, ScrollView } from "react-native";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRouter } from "expo-router";
 import { ScreenFrame } from "@/components/ScreenFrame";
 import { BrutalCard } from "@/components/BrutalCard";
 import { colors, radius } from "@/theme/tokens";
-import { mockEvents, MockEvent } from "@/lib/mockData";
+import { mockEvents, MockEvent, visiblePropsFor } from "@/lib/mockData";
+import { useStore } from "@/lib/store";
 
 const STATUS_META: Record<
   MockEvent["status"],
@@ -97,9 +99,19 @@ function CategoryChips({
   );
 }
 
-function EventRow({ event }: { event: MockEvent }) {
+function EventRow({
+  event,
+  visibleCount,
+  volume,
+  onPress,
+}: {
+  event: MockEvent;
+  visibleCount: number;
+  volume: number;
+  onPress: () => void;
+}) {
   return (
-    <Pressable>
+    <Pressable onPress={onPress}>
       <BrutalCard>
         <View
           style={{
@@ -160,7 +172,7 @@ function EventRow({ event }: { event: MockEvent }) {
                 fontVariant: ["tabular-nums"],
               }}
             >
-              {event.propsCount}
+              {visibleCount}
             </Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
@@ -176,7 +188,7 @@ function EventRow({ event }: { event: MockEvent }) {
                 fontVariant: ["tabular-nums"],
               }}
             >
-              {event.potTokens.toLocaleString()} ⚡
+              {volume.toLocaleString()} ⚡
             </Text>
           </View>
         </View>
@@ -187,32 +199,59 @@ function EventRow({ event }: { event: MockEvent }) {
 
 export default function HomeScreen() {
   const [category, setCategory] = useState<string>("All");
+  const router = useRouter();
+  const { props, viewerId, balance } = useStore();
 
-  const filtered =
-    category === "Live"
-      ? mockEvents.filter((e) => e.status === "LIVE" || e.status === "RESOLVING")
-      : mockEvents;
+  const eventStats = useMemo(() => {
+    return mockEvents.map((e) => {
+      const propsForEvent = props.filter((p) => p.eventId === e.id);
+      const visible = visiblePropsFor(viewerId, propsForEvent);
+      const volume = visible.reduce((acc, p) => acc + p.yesPool + p.noPool, 0);
+      return { event: e, visibleCount: visible.length, volume };
+    });
+  }, [props, viewerId]);
+
+  const filtered = useMemo(() => {
+    if (category === "Live") {
+      return eventStats.filter(
+        ({ event }) => event.status === "LIVE" || event.status === "RESOLVING"
+      );
+    }
+    if (category === "Tonight") {
+      return eventStats.filter(
+        ({ event }) =>
+          event.startsInMinutes >= -240 && event.startsInMinutes <= 60 * 6
+      );
+    }
+    if (category === "This Week") {
+      return eventStats.filter(
+        ({ event }) => event.startsInMinutes <= 60 * 24 * 7
+      );
+    }
+    return eventStats;
+  }, [eventStats, category]);
 
   return (
     <ScreenFrame
       title="Markets"
       trailing={
         <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "500" }}>
-          ⚡ 2,840
+          ⚡ {balance.toLocaleString()}
         </Text>
       }
     >
-      <View
-        style={{
-          margin: -16,
-          marginBottom: 12,
-        }}
-      >
+      <View style={{ margin: -16, marginBottom: 12 }}>
         <CategoryChips active={category} onChange={setCategory} />
       </View>
 
-      {filtered.map((e) => (
-        <EventRow key={e.id} event={e} />
+      {filtered.map(({ event, visibleCount, volume }) => (
+        <EventRow
+          key={event.id}
+          event={event}
+          visibleCount={visibleCount}
+          volume={volume}
+          onPress={() => router.push(`/event/${event.id}`)}
+        />
       ))}
     </ScreenFrame>
   );
