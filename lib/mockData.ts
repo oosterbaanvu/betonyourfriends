@@ -13,7 +13,10 @@ export type MockEvent = {
    */
   startsInMinutes: number;
   status: EventStatus;
-  /** Used to compute the running pot from props. */
+  /** People in the friend group invited to this event. Drives avatar stacks. */
+  memberIds: string[];
+  /** Sharable invite code; in real life Supabase would generate this. */
+  inviteCode: string;
   accent: "lime" | "pink" | "violet" | "sun";
 };
 
@@ -59,38 +62,57 @@ export const mockFriends: Friend[] = [
 export const mockEvents: MockEvent[] = [
   {
     id: "evt_1",
-    title: "Mark's Birthday Rager",
+    title: "Mark's Birthday",
     creator: "@jules",
-    startsAt: "Tonight · 9:00 PM",
+    startsAt: "Tonight, 9:00 PM",
     startsInMinutes: 90,
     status: "LIVE",
+    memberIds: ["u_jules", "u_mark", "u_romi", "u_dave", "u_steve", "u_sarah"],
+    inviteCode: "RAGE-91X",
     accent: "pink",
   },
   {
     id: "evt_2",
-    title: "Fantasy Draft Night",
-    creator: "@deeznuts",
-    startsAt: "Sat · 7:30 PM",
-    startsInMinutes: 60 * 26,
+    title: "Friday Night Darts at The Anchor",
+    creator: "@dave",
+    startsAt: "Fri, 8:00 PM",
+    startsInMinutes: 60 * 4,
     status: "OPEN",
+    memberIds: ["u_jules", "u_dave", "u_steve", "u_priya"],
+    inviteCode: "BULL-501",
     accent: "lime",
   },
   {
     id: "evt_3",
-    title: "Sunday Brunch Carnage",
-    creator: "@romi",
-    startsAt: "Sun · 11:00 AM",
-    startsInMinutes: 60 * 50,
+    title: "Lakers vs Celtics — Game 5",
+    creator: "@bigsteve",
+    startsAt: "Sat, 7:30 PM",
+    startsInMinutes: 60 * 26,
     status: "OPEN",
-    accent: "violet",
+    memberIds: ["u_jules", "u_steve", "u_dave", "u_romi", "u_sarah"],
+    inviteCode: "TIPOFF-7",
+    accent: "lime",
   },
   {
     id: "evt_4",
-    title: "Karaoke Apocalypse",
+    title: "Sarah Finishes Her Thesis",
+    creator: "@sarah",
+    startsAt: "Sun, 11:59 PM deadline",
+    startsInMinutes: 60 * 50,
+    status: "OPEN",
+    memberIds: ["u_jules", "u_sarah", "u_priya", "u_romi"],
+    inviteCode: "PHD-CTDN",
+    accent: "violet",
+  },
+  {
+    id: "evt_5",
+    title: "Karaoke Night",
     creator: "@bigsteve",
     startsAt: "Resolving now",
     startsInMinutes: -180,
     status: "RESOLVING",
+    memberIds: ["u_jules", "u_steve", "u_romi", "u_priya", "u_mark"],
+    inviteCode: "MIC-DROP",
     accent: "sun",
   },
 ];
@@ -164,52 +186,111 @@ export const mockProps: MockProp[] = [
     voterCount: 6,
   },
 
-  // ─── evt_2 — OPEN ─────────────────────────────────────────────
+  // ─── evt_2 — Friday Night Darts ───────────────────────────────
   {
     id: "prp_10",
     eventId: "evt_2",
-    description: "Priya picks a kicker in the first 5 rounds",
-    subjectUserIds: ["u_priya"],
+    description: "Dave hits a 180 at least once",
+    subjectUserIds: ["u_dave"],
     status: "OPEN",
-    yesPool: 60,
-    noPool: 240,
+    yesPool: 480,
+    noPool: 220,
     votes: { yes: 0, no: 0 },
-    voterCount: 6,
+    voterCount: 4,
   },
   {
     id: "prp_11",
     eventId: "evt_2",
-    description: "Steve falls asleep before round 8",
+    description: "Steve overshoots his finish at least 3 times",
     subjectUserIds: ["u_steve"],
     status: "OPEN",
     yesPool: 320,
     noPool: 180,
     votes: { yes: 0, no: 0 },
-    voterCount: 6,
+    voterCount: 4,
+  },
+  {
+    id: "prp_12",
+    eventId: "evt_2",
+    description: "The match goes to a deciding leg",
+    subjectUserIds: [],
+    status: "OPEN",
+    yesPool: 250,
+    noPool: 150,
+    votes: { yes: 0, no: 0 },
+    voterCount: 4,
   },
 
-  // ─── evt_4 — RESOLVING ────────────────────────────────────────
+  // ─── evt_3 — Lakers vs Celtics ────────────────────────────────
+  {
+    id: "prp_15",
+    eventId: "evt_3",
+    description: "Lakers cover the spread",
+    subjectUserIds: [],
+    status: "OPEN",
+    yesPool: 720,
+    noPool: 480,
+    votes: { yes: 0, no: 0 },
+    voterCount: 5,
+  },
+  {
+    id: "prp_16",
+    eventId: "evt_3",
+    description: "More than 220 total points scored",
+    subjectUserIds: [],
+    status: "OPEN",
+    yesPool: 540,
+    noPool: 360,
+    votes: { yes: 0, no: 0 },
+    voterCount: 5,
+  },
+
+  // ─── evt_4 — Sarah's thesis ───────────────────────────────────
+  {
+    id: "prp_18",
+    eventId: "evt_4",
+    description: "Sarah submits before midnight Sunday",
+    subjectUserIds: ["u_sarah"],
+    status: "OPEN",
+    yesPool: 220,
+    noPool: 580,
+    votes: { yes: 0, no: 0 },
+    voterCount: 4,
+  },
+  {
+    id: "prp_19",
+    eventId: "evt_4",
+    description: "Sarah pulls at least one all-nighter this week",
+    subjectUserIds: ["u_sarah"],
+    status: "OPEN",
+    yesPool: 920,
+    noPool: 80,
+    votes: { yes: 0, no: 0 },
+    voterCount: 4,
+  },
+
+  // ─── evt_5 — Karaoke (RESOLVING) ──────────────────────────────
   {
     id: "prp_20",
-    eventId: "evt_4",
+    eventId: "evt_5",
     description: "Steve attempts Bohemian Rhapsody",
     subjectUserIds: ["u_steve"],
     status: "AWAITING_VERDICT",
     yesPool: 1240,
     noPool: 360,
     votes: { yes: 4, no: 1 },
-    voterCount: 6,
+    voterCount: 5,
   },
   {
     id: "prp_21",
-    eventId: "evt_4",
+    eventId: "evt_5",
     description: "Romi cries during a slow song",
     subjectUserIds: ["u_romi"],
     status: "RESOLVED",
     yesPool: 880,
     noPool: 220,
     votes: { yes: 5, no: 1 },
-    voterCount: 6,
+    voterCount: 5,
     resolvedSide: "YES",
   },
 ];

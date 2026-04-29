@@ -117,7 +117,7 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                   marginBottom: 18,
                 }}
               >
-                Balance {balance.toLocaleString()}⚡
+                Balance {balance.toLocaleString()} tokens
               </Text>
 
               {/* Yes/No segmented control */}
@@ -171,7 +171,7 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                   marginBottom: 6,
                 }}
               >
-                Stake (⚡)
+                Stake
               </Text>
               <TextInput
                 value={stakeText}
@@ -206,7 +206,7 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                     }}
                   >
                     <Text style={{ fontWeight: "600", color: colors.text, fontSize: 13 }}>
-                      {q}⚡
+                      {q}
                     </Text>
                   </Pressable>
                 ))}
@@ -272,7 +272,7 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                       fontVariant: ["tabular-nums"],
                     }}
                   >
-                    {Math.round(gross).toLocaleString()}⚡
+                    {Math.round(gross).toLocaleString()}
                   </Text>
                 </View>
                 <View
@@ -288,7 +288,7 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                       fontVariant: ["tabular-nums"],
                     }}
                   >
-                    +{Math.round(net).toLocaleString()}⚡
+                    +{Math.round(net).toLocaleString()}
                   </Text>
                 </View>
               </View>
@@ -319,7 +319,7 @@ export function WagerSheet({ prop, initialSide, onClose }: Props) {
                     ? "Not enough tokens"
                     : stake <= 0
                     ? "Enter a stake"
-                    : `Confirm · Bet ${stake.toLocaleString()}⚡ on ${side}`}
+                    : `Confirm — Bet ${stake.toLocaleString()} on ${side}`}
                 </Text>
               </Pressable>
             </View>

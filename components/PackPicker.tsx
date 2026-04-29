@@ -8,12 +8,12 @@ import {
   Alert,
   Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, radius } from "@/theme/tokens";
 import { Pack, PACKS } from "@/lib/packs";
 import { BrutalButton } from "./BrutalButton";
 
 type Props = {
-  /** Called with the prop strings the user picked from a pack. */
   onApply: (props: string[], packName: string) => void;
 };
 
@@ -21,73 +21,118 @@ function PackChip({ pack, onPress }: { pack: Pack; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      style={{
+      style={({ pressed }) => ({
         backgroundColor: colors.bg,
         borderColor: colors.border,
         borderWidth: 1,
         borderRadius: radius.lg,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
         marginRight: 10,
-        width: 200,
-      }}
+        width: 220,
+        overflow: "hidden",
+        opacity: pressed ? 0.95 : 1,
+      })}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text style={{ fontSize: 22 }}>{pack.emoji}</Text>
-        {pack.adult ? (
+      {/* Top accent stripe */}
+      <View
+        style={{
+          height: 4,
+          backgroundColor: pack.accent,
+        }}
+      />
+      <View style={{ padding: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
-              marginLeft: 8,
-              backgroundColor: colors.noFaint,
-              paddingHorizontal: 6,
-              paddingVertical: 2,
-              borderRadius: radius.pill,
+              width: 36,
+              height: 36,
+              borderRadius: radius.sm,
+              backgroundColor: pack.accent,
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <Text
               style={{
-                color: colors.no,
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 0.4,
+                color: "#FFFFFF",
+                fontWeight: "800",
+                fontSize: 13,
+                letterSpacing: 0.5,
               }}
             >
-              18+
+              {pack.monogram}
             </Text>
           </View>
-        ) : null}
+          {pack.adult ? (
+            <View
+              style={{
+                marginLeft: "auto",
+                backgroundColor: colors.noFaint,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: radius.pill,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.no,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: 0.4,
+                }}
+              >
+                18+
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: "700",
+            color: colors.text,
+            marginTop: 10,
+            letterSpacing: -0.2,
+          }}
+          numberOfLines={1}
+        >
+          {pack.name}
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: colors.textMuted,
+            marginTop: 2,
+            lineHeight: 16,
+          }}
+          numberOfLines={2}
+        >
+          {pack.tagline}
+        </Text>
+        <View
+          style={{
+            marginTop: 10,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              color: pack.accent,
+              letterSpacing: 0.5,
+            }}
+          >
+            {pack.props.length} props
+          </Text>
+          <Ionicons
+            name="arrow-forward"
+            size={12}
+            color={pack.accent}
+            style={{ marginLeft: 4 }}
+          />
+        </View>
       </View>
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: "700",
-          color: colors.text,
-          marginTop: 8,
-        }}
-        numberOfLines={1}
-      >
-        {pack.name}
-      </Text>
-      <Text
-        style={{
-          fontSize: 12,
-          color: colors.textMuted,
-          marginTop: 2,
-        }}
-        numberOfLines={2}
-      >
-        {pack.tagline}
-      </Text>
-      <Text
-        style={{
-          marginTop: 8,
-          fontSize: 11,
-          fontWeight: "600",
-          color: colors.primary,
-        }}
-      >
-        {pack.props.length} props →
-      </Text>
     </Pressable>
   );
 }
@@ -105,28 +150,16 @@ function PackDetail({
     Object.fromEntries(pack.props.map((_, i) => [i, true]))
   );
 
-  const toggle = (i: number) =>
-    setSelected((s) => ({ ...s, [i]: !s[i] }));
+  const toggle = (i: number) => setSelected((s) => ({ ...s, [i]: !s[i] }));
   const allOn = pack.props.every((_, i) => selected[i]);
   const toggleAll = () =>
-    setSelected(
-      Object.fromEntries(pack.props.map((_, i) => [i, !allOn]))
-    );
+    setSelected(Object.fromEntries(pack.props.map((_, i) => [i, !allOn])));
 
   const count = Object.values(selected).filter(Boolean).length;
-
-  const apply = () => {
-    const picks = pack.props.filter((_, i) => selected[i]);
-    onApply(picks);
-  };
+  const apply = () => onApply(pack.props.filter((_, i) => selected[i]));
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.bg,
-      }}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View
         style={{
           paddingHorizontal: 16,
@@ -140,26 +173,50 @@ function PackDetail({
         }}
       >
         <Pressable onPress={onClose}>
-          <Text style={{ color: colors.textMuted, fontWeight: "600", fontSize: 15 }}>
+          <Text
+            style={{ color: colors.textMuted, fontWeight: "600", fontSize: 15 }}
+          >
             Cancel
           </Text>
         </Pressable>
         <Pressable onPress={toggleAll}>
-          <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 14 }}>
+          <Text
+            style={{ color: colors.primary, fontWeight: "600", fontSize: 14 }}
+          >
             {allOn ? "Unselect all" : "Select all"}
           </Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        <Text style={{ fontSize: 32 }}>{pack.emoji}</Text>
+        <View
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: radius.md,
+            backgroundColor: pack.accent,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontWeight: "800",
+              fontSize: 18,
+              letterSpacing: 1,
+            }}
+          >
+            {pack.monogram}
+          </Text>
+        </View>
         <Text
           style={{
-            fontSize: 22,
-            fontWeight: "700",
+            fontSize: 24,
+            fontWeight: "800",
             color: colors.text,
-            marginTop: 8,
-            letterSpacing: -0.3,
+            marginTop: 12,
+            letterSpacing: -0.4,
           }}
         >
           {pack.name}
@@ -197,11 +254,7 @@ function PackDetail({
                 }}
               >
                 {isOn ? (
-                  <Text
-                    style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}
-                  >
-                    ✓
-                  </Text>
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                 ) : null}
               </View>
               <Text
@@ -245,11 +298,12 @@ export function PackPicker({ onApply }: Props) {
 
   const tryOpen = (pack: Pack) => {
     if (pack.adult) {
-      // Cross-platform confirm: Alert.alert on native, window.confirm on web.
       const ok = () => setOpenPack(pack);
       if (Platform.OS === "web") {
-        // eslint-disable-next-line no-alert
-        if (typeof window !== "undefined" && window.confirm("This pack is for adult party games. Continue?")) {
+        if (
+          typeof window !== "undefined" &&
+          window.confirm("This pack is for adult party games. Continue?")
+        ) {
           ok();
         }
         return;

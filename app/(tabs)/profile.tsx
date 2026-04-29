@@ -164,7 +164,7 @@ export default function ProfileScreen() {
                 key={p.id}
                 prop={p.description}
                 side={p.resolvedSide ?? "YES"}
-                delta={p.resolvedSide === "YES" ? "+180 ⚡" : "−100 ⚡"}
+                delta={p.resolvedSide === "YES" ? "+180" : "−100"}
                 win={p.resolvedSide === "YES"}
               />
             ))
