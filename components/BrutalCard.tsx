@@ -1,48 +1,39 @@
 import { View, ViewProps } from "react-native";
-import { colors, border } from "@/theme/tokens";
+import { colors, radius, shadow } from "@/theme/tokens";
 
 type Props = ViewProps & {
-  bg?: keyof typeof colors;
-  offset?: number;
+  padding?: number;
+  flat?: boolean;
 };
 
 /**
- * Card with thick black border + hard offset block behind it (brutalist drop).
- * No soft shadow — uses a stacked black rectangle for the drop effect.
+ * Plain card surface — white, 1px border, soft drop, modest radius.
+ * (Filename retained for now; behavior is the clean variant.)
  */
 export function BrutalCard({
-  bg = "chalk",
-  offset = 6,
+  padding = 16,
+  flat = false,
   style,
   children,
   ...rest
 }: Props) {
   return (
-    <View style={{ position: "relative", marginRight: offset, marginBottom: offset }}>
-      <View
-        style={{
-          position: "absolute",
-          top: offset,
-          left: offset,
-          right: -offset,
-          bottom: -offset,
-          backgroundColor: colors.ink,
-        }}
-      />
-      <View
-        {...rest}
-        style={[
-          {
-            backgroundColor: colors[bg],
-            borderColor: colors.ink,
-            borderWidth: border.brutal,
-            padding: 16,
-          },
-          style,
-        ]}
-      >
-        {children}
-      </View>
+    <View
+      {...rest}
+      style={[
+        {
+          backgroundColor: colors.bg,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.lg,
+          padding,
+          marginBottom: 12,
+        },
+        !flat && shadow.card,
+        style,
+      ]}
+    >
+      {children}
     </View>
   );
 }

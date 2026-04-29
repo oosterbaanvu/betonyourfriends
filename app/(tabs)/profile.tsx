@@ -2,140 +2,164 @@ import { View, Text } from "react-native";
 import { ScreenFrame } from "@/components/ScreenFrame";
 import { BrutalCard } from "@/components/BrutalCard";
 import { BrutalButton } from "@/components/BrutalButton";
-import { colors, border } from "@/theme/tokens";
+import { colors, radius } from "@/theme/tokens";
 
-function StatBlock({
-  label,
-  value,
-  bg,
-}: {
-  label: string;
-  value: string;
-  bg: keyof typeof colors;
-}) {
+function StatCell({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flex: 1 }}>
-      <BrutalCard bg={bg}>
+      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textMuted }}>
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontSize: 20,
+          fontWeight: "700",
+          color: colors.text,
+          marginTop: 2,
+          fontVariant: ["tabular-nums"],
+        }}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function VerdictRow({
+  prop,
+  side,
+  delta,
+  win,
+}: {
+  prop: string;
+  side: "YES" | "NO";
+  delta: string;
+  win: boolean;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      }}
+    >
+      <View style={{ flex: 1, paddingRight: 12 }}>
         <Text
-          style={{
-            fontSize: 11,
-            fontWeight: "900",
-            letterSpacing: 1.5,
-            color: colors.ink,
-          }}
+          style={{ fontSize: 14, fontWeight: "600", color: colors.text }}
+          numberOfLines={2}
         >
-          {label}
+          {prop}
         </Text>
         <Text
           style={{
-            marginTop: 6,
-            fontSize: 38,
-            fontWeight: "900",
-            color: colors.ink,
-            letterSpacing: -1.5,
+            fontSize: 12,
+            color: colors.textMuted,
+            marginTop: 2,
           }}
         >
-          {value}
+          You bet {side}
         </Text>
-      </BrutalCard>
+      </View>
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "700",
+          color: win ? colors.yes : colors.no,
+          fontVariant: ["tabular-nums"],
+        }}
+      >
+        {delta}
+      </Text>
     </View>
   );
 }
 
 export default function ProfileScreen() {
   return (
-    <ScreenFrame title="Profile" subtitle="Your reputation. Your bankroll." accent="violet">
-      <BrutalCard bg="ink">
+    <ScreenFrame title="Profile">
+      <BrutalCard padding={20}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
-              width: 72,
-              height: 72,
-              backgroundColor: colors.lime,
-              borderColor: colors.chalk,
-              borderWidth: border.brutal,
+              width: 56,
+              height: 56,
+              borderRadius: radius.pill,
+              backgroundColor: colors.bgInset,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Text style={{ fontSize: 32, fontWeight: "900", color: colors.ink }}>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: colors.text }}>
               J
             </Text>
           </View>
-          <View style={{ marginLeft: 16, flex: 1 }}>
+          <View style={{ marginLeft: 14, flex: 1 }}>
             <Text
               style={{
-                color: colors.chalk,
-                fontSize: 24,
-                fontWeight: "900",
-                letterSpacing: -0.5,
-                textTransform: "uppercase",
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.text,
+                letterSpacing: -0.2,
               }}
             >
               @jules
             </Text>
             <Text
-              style={{
-                color: colors.lime,
-                fontSize: 12,
-                fontWeight: "900",
-                letterSpacing: 1.2,
-                marginTop: 2,
-              }}
+              style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}
             >
-              CHAOS COMMISSIONER · LVL 7
+              Member since April 2026
             </Text>
           </View>
         </View>
-      </BrutalCard>
 
-      <View style={{ flexDirection: "row", marginTop: 8 }}>
-        <StatBlock label="TOKENS" value="2,840 ⚡" bg="lime" />
-        <View style={{ width: 8 }} />
-        <StatBlock label="PROPHET" value="84" bg="pink" />
-      </View>
-
-      <View style={{ flexDirection: "row" }}>
-        <StatBlock label="WINS" value="27" bg="sun" />
-        <View style={{ width: 8 }} />
-        <StatBlock label="STREAK" value="5🔥" bg="chalk" />
-      </View>
-
-      <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 16 }}>
-        <View style={{ width: 16, height: 16, backgroundColor: colors.ink, marginRight: 8 }} />
-        <Text
+        <View
           style={{
-            fontSize: 14,
-            fontWeight: "900",
-            letterSpacing: 2,
-            color: colors.ink,
+            flexDirection: "row",
+            marginTop: 18,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
           }}
         >
-          RECENT VERDICTS
-        </Text>
-        <View style={{ flex: 1, height: border.thick, backgroundColor: colors.ink, marginLeft: 12 }} />
-      </View>
-
-      <BrutalCard bg="chalk">
-        <Text style={{ fontSize: 16, fontWeight: "900", color: colors.ink }}>
-          MARK SPILLED HIS DRINK
-        </Text>
-        <Text style={{ marginTop: 4, fontWeight: "700", color: colors.ink }}>
-          You bet YES · +320 ⚡
-        </Text>
+          <StatCell label="Tokens" value="2,840" />
+          <StatCell label="Prophet score" value="84" />
+          <StatCell label="Wins" value="27" />
+        </View>
       </BrutalCard>
 
-      <BrutalCard bg="chalk">
-        <Text style={{ fontSize: 16, fontWeight: "900", color: colors.ink }}>
-          ROMI ATE 4 SLICES
-        </Text>
-        <Text style={{ marginTop: 4, fontWeight: "700", color: colors.danger }}>
-          You bet NO · −100 ⚡
-        </Text>
+      <BrutalCard padding={0}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.text }}>
+            Recent verdicts
+          </Text>
+        </View>
+        <View style={{ paddingHorizontal: 16 }}>
+          <VerdictRow
+            prop="Mark spilled his drink before midnight"
+            side="YES"
+            delta="+320 ⚡"
+            win
+          />
+          <VerdictRow
+            prop="Romi ate four slices of pizza"
+            side="NO"
+            delta="−100 ⚡"
+            win={false}
+          />
+          <VerdictRow
+            prop="Steve attempted Bohemian Rhapsody at karaoke"
+            side="YES"
+            delta="+180 ⚡"
+            win
+          />
+        </View>
       </BrutalCard>
 
-      <View style={{ height: 16 }} />
-      <BrutalButton label="Sign Out" bg="chalk" fullWidth />
+      <BrutalButton label="Sign out" variant="secondary" fullWidth />
     </ScreenFrame>
   );
 }
