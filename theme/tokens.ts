@@ -1,46 +1,77 @@
 /**
- * BetOnYourFriends — clean, Polymarket-inspired tokens.
- * Light surface, 1px gray borders, color reserved for Yes/No semantics.
+ * BetOnYourFriends — refined Neo-Brutalist tokens.
+ *
+ * - Pitch black + bone white surfaces.
+ * - Hard-edged borders (1, 3, 5px). No rounded blobs.
+ * - Stacked-block drops as a signature, never soft shadows.
+ * - Typography is heavy, tight-tracked, and uses mono for numbers.
+ * - Pop colors (lime, pink, violet, sun) reserved for energy moments.
  */
 
 export const colors = {
   // surfaces
-  bg: "#FFFFFF",
-  bgSubtle: "#F7F8FA",
-  bgInset: "#F0F2F5",
-
-  // borders
-  border: "#E5E7EB",
-  borderStrong: "#D1D5DB",
+  ink: "#0A0A0A",
+  ash: "#1C1C1C",
+  bone: "#F2EEE3",
+  chalk: "#FFFFFF",
+  paper: "#FAF7EE",
 
   // text
-  text: "#0F172A",
-  textMuted: "#6B7280",
-  textFaint: "#9CA3AF",
+  text: "#0A0A0A",
+  textInvert: "#FFFFFF",
+  textMuted: "#5A5A5A",
+  textFaint: "#8A8A8A",
 
-  // brand / actions
-  primary: "#2563EB",
-  primaryFaint: "#EFF4FF",
+  // borders (ink-on-bone is the brutalist default)
+  border: "#0A0A0A",
+  borderSoft: "#D9D5C8",
+  hairline: "#C9C5B8",
+
+  // pop accents
+  lime: "#C6FF3D",
+  pink: "#FF3D8A",
+  violet: "#7A3DFF",
+  sun: "#FFD23D",
+  blood: "#FF2E2E",
+  sky: "#3DB7FF",
 
   // semantic
-  yes: "#10B981",
-  yesFaint: "#E7F8F1",
-  no: "#EF4444",
-  noFaint: "#FEECEC",
+  yes: "#16A34A",
+  yesFaint: "#DBF4DC",
+  no: "#DC2626",
+  noFaint: "#FCE4E4",
 
   // status
-  live: "#DC2626",
-  liveFaint: "#FEECEC",
-  warn: "#F59E0B",
-  warnFaint: "#FEF4E0",
-  neutral: "#6B7280",
-  neutralFaint: "#F0F2F5",
+  liveBg: "#FF3D8A",
+  liveFg: "#FFFFFF",
+  openBg: "#C6FF3D",
+  openFg: "#0A0A0A",
+  warnBg: "#FFD23D",
+  warnFg: "#0A0A0A",
+  closedBg: "#1C1C1C",
+  closedFg: "#FFFFFF",
+
+  // legacy aliases used elsewhere — keep them mapped so we don't cascade-edit
+  bg: "#FAF7EE",
+  bgSubtle: "#F2EEE3",
+  bgInset: "#E8E3D5",
+  borderStrong: "#0A0A0A",
+  primary: "#0A0A0A",
+  primaryFaint: "#E8E3D5",
+  liveFaint: "#FFD8E5",
+  live: "#FF3D8A",
+  warn: "#A86B00",
+  warnFaint: "#FFE8B0",
+  neutral: "#5A5A5A",
+  neutralFaint: "#E8E3D5",
 } as const;
 
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
+  none: 0,
+  nub: 2,
+  sm: 4,
+  md: 6,
+  lg: 8,
   pill: 999,
 } as const;
 
@@ -53,22 +84,34 @@ export const space = {
   xxl: 32,
 } as const;
 
+export const border = {
+  hairline: 1,
+  thick: 3,
+  brutal: 5,
+} as const;
+
 export const type = {
-  display: { fontSize: 24, fontWeight: "700" as const, letterSpacing: -0.4 },
-  h1: { fontSize: 20, fontWeight: "700" as const, letterSpacing: -0.3 },
-  h2: { fontSize: 17, fontWeight: "600" as const, letterSpacing: -0.2 },
-  body: { fontSize: 15, fontWeight: "500" as const },
-  bodyMuted: { fontSize: 14, fontWeight: "500" as const, color: colors.textMuted },
-  caption: { fontSize: 12, fontWeight: "500" as const, color: colors.textMuted },
-  num: { fontSize: 18, fontWeight: "700" as const, fontVariant: ["tabular-nums" as const] },
+  display: {
+    fontWeight: "900" as const,
+    letterSpacing: -0.6,
+  },
+  heading: {
+    fontWeight: "800" as const,
+    letterSpacing: -0.3,
+  },
+  body: {
+    fontWeight: "600" as const,
+  },
+  mono: {
+    fontFamily: "Courier",
+    fontWeight: "700" as const,
+    letterSpacing: 0.3,
+  },
 };
 
 export const shadow = {
-  card: {
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+  /** Stacked-block drop. Pass to a wrapping View as `position` ref point. */
+  block: {
+    backgroundColor: colors.ink,
   },
 };

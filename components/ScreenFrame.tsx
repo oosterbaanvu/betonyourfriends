@@ -1,50 +1,70 @@
 import { ReactNode } from "react";
 import { View, Text, ScrollView, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "@/theme/tokens";
+import { colors, border } from "@/theme/tokens";
 
 type Props = {
   title: string;
   trailing?: ReactNode;
+  leading?: ReactNode;
+  accent?: keyof typeof colors;
   children: ReactNode;
   scroll?: boolean;
 };
 
-export function ScreenFrame({ title, trailing, children, scroll = true }: Props) {
+/**
+ * Brutalist screen header: a slab of color with a 5px black underrule.
+ * Use `accent` to set the slab color (defaults to chalk for a quieter feel).
+ */
+export function ScreenFrame({
+  title,
+  trailing,
+  leading,
+  accent = "chalk",
+  children,
+  scroll = true,
+}: Props) {
   const Body = scroll ? ScrollView : View;
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
-      style={{ flex: 1, backgroundColor: colors.bg }}
+      style={{ flex: 1, backgroundColor: colors.bone }}
     >
       <StatusBar barStyle="dark-content" />
       <View
         style={{
-          paddingHorizontal: 20,
-          paddingTop: 12,
-          paddingBottom: 12,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          backgroundColor: colors.bg,
+          backgroundColor: colors[accent],
+          borderBottomColor: colors.ink,
+          borderBottomWidth: border.brutal,
+          paddingHorizontal: 18,
+          paddingTop: 14,
+          paddingBottom: 16,
         }}
       >
-        <Text
+        {leading ? <View style={{ marginBottom: 8 }}>{leading}</View> : null}
+        <View
           style={{
-            fontSize: 22,
-            fontWeight: "700",
-            color: colors.text,
-            letterSpacing: -0.3,
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
           }}
         >
-          {title}
-        </Text>
-        {trailing}
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: "900",
+              color: colors.ink,
+              letterSpacing: -1,
+              textTransform: "uppercase",
+            }}
+          >
+            {title}
+          </Text>
+          {trailing}
+        </View>
       </View>
       <Body
-        style={{ flex: 1, backgroundColor: colors.bgSubtle }}
+        style={{ flex: 1, backgroundColor: colors.bone }}
         contentContainerStyle={
           scroll ? { padding: 16, paddingBottom: 60 } : undefined
         }
