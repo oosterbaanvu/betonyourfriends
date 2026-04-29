@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { Text, View } from "react-native";
-import { colors, border } from "@/theme/tokens";
+import { colors } from "@/theme/tokens";
 
 type IconProps = { focused: boolean; glyph: string };
 
@@ -8,20 +8,17 @@ function TabGlyph({ focused, glyph }: IconProps) {
   return (
     <View
       style={{
-        width: 44,
-        height: 44,
+        width: 28,
+        height: 28,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: focused ? colors.lime : "transparent",
-        borderColor: colors.ink,
-        borderWidth: focused ? border.thick : 0,
       }}
     >
       <Text
         style={{
-          fontSize: 22,
-          fontWeight: "900",
-          color: colors.ink,
+          fontSize: 18,
+          fontWeight: "600",
+          color: focused ? colors.text : colors.textFaint,
         }}
       >
         {glyph}
@@ -37,28 +34,27 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
-          backgroundColor: colors.chalk,
-          borderTopColor: colors.ink,
-          borderTopWidth: border.brutal,
-          height: 88,
+          backgroundColor: colors.bg,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 78,
           paddingTop: 8,
-          paddingBottom: 22,
+          paddingBottom: 18,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "900",
-          letterSpacing: 1,
-          textTransform: "uppercase",
+          fontWeight: "600",
+          marginTop: 2,
         },
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: "#7A7A7A",
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.textFaint,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="◆" />,
+          title: "Markets",
+          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="◇" />,
         }}
       />
       <Tabs.Screen
@@ -72,7 +68,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="◉" />,
+          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} glyph="○" />,
         }}
       />
     </Tabs>

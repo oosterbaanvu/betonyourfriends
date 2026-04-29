@@ -1,70 +1,126 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
+import { useState } from "react";
 import { ScreenFrame } from "@/components/ScreenFrame";
 import { BrutalCard } from "@/components/BrutalCard";
-import { colors, border } from "@/theme/tokens";
+import { colors, radius } from "@/theme/tokens";
 import { mockEvents, MockEvent } from "@/lib/mockData";
 
-const STATUS_BG: Record<MockEvent["status"], keyof typeof colors> = {
-  LIVE: "pink",
-  OPEN: "lime",
-  RESOLVING: "sun",
-  CLOSED: "ash",
+const STATUS_META: Record<
+  MockEvent["status"],
+  { label: string; bg: string; fg: string; dot?: boolean }
+> = {
+  LIVE: { label: "Live", bg: colors.liveFaint, fg: colors.live, dot: true },
+  OPEN: { label: "Open", bg: colors.primaryFaint, fg: colors.primary },
+  RESOLVING: { label: "Resolving", bg: colors.warnFaint, fg: colors.warn },
+  CLOSED: { label: "Closed", bg: colors.neutralFaint, fg: colors.neutral },
 };
 
 function StatusPill({ status }: { status: MockEvent["status"] }) {
-  const bg = STATUS_BG[status];
-  const fg = bg === "ash" ? "chalk" : "ink";
+  const m = STATUS_META[status];
   return (
     <View
       style={{
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: m.bg,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: radius.pill,
         alignSelf: "flex-start",
-        backgroundColor: colors[bg],
-        borderColor: colors.ink,
-        borderWidth: border.thick,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
       }}
     >
-      <Text
-        style={{
-          color: colors[fg],
-          fontWeight: "900",
-          fontSize: 11,
-          letterSpacing: 1.2,
-        }}
-      >
-        {status === "LIVE" ? "● LIVE NOW" : status}
+      {m.dot ? (
+        <View
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: m.fg,
+            marginRight: 5,
+          }}
+        />
+      ) : null}
+      <Text style={{ color: m.fg, fontSize: 12, fontWeight: "600" }}>
+        {m.label}
       </Text>
     </View>
+  );
+}
+
+const CATEGORIES = ["All", "Live", "Tonight", "This Week"] as const;
+
+function CategoryChips({
+  active,
+  onChange,
+}: {
+  active: string;
+  onChange: (c: string) => void;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+      style={{
+        backgroundColor: colors.bg,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        paddingVertical: 10,
+      }}
+    >
+      {CATEGORIES.map((c) => {
+        const isActive = c === active;
+        return (
+          <Pressable
+            key={c}
+            onPress={() => onChange(c)}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderRadius: radius.pill,
+              backgroundColor: isActive ? colors.text : colors.bgInset,
+            }}
+          >
+            <Text
+              style={{
+                color: isActive ? "#FFFFFF" : colors.text,
+                fontWeight: "600",
+                fontSize: 13,
+              }}
+            >
+              {c}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 
 function EventRow({ event }: { event: MockEvent }) {
   return (
     <Pressable>
-      <BrutalCard bg={event.accent}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <BrutalCard>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 10,
+          }}
+        >
           <StatusPill status={event.status} />
-          <Text
-            style={{
-              fontFamily: "Courier",
-              fontWeight: "900",
-              color: colors.ink,
-              fontSize: 13,
-            }}
-          >
+          <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "500" }}>
             {event.startsAt}
           </Text>
         </View>
 
         <Text
           style={{
-            marginTop: 14,
-            fontSize: 26,
-            fontWeight: "900",
-            color: colors.ink,
-            letterSpacing: -0.6,
-            textTransform: "uppercase",
+            fontSize: 17,
+            fontWeight: "700",
+            color: colors.text,
+            letterSpacing: -0.2,
           }}
         >
           {event.title}
@@ -72,38 +128,54 @@ function EventRow({ event }: { event: MockEvent }) {
 
         <Text
           style={{
-            marginTop: 4,
-            color: colors.ink,
-            fontWeight: "700",
+            marginTop: 2,
+            color: colors.textMuted,
             fontSize: 13,
+            fontWeight: "500",
           }}
         >
-          BY {event.creator.toUpperCase()}
+          by {event.creator}
         </Text>
 
         <View
           style={{
-            marginTop: 16,
+            marginTop: 14,
             paddingTop: 12,
-            borderTopColor: colors.ink,
-            borderTopWidth: border.thick,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
             flexDirection: "row",
             justifyContent: "space-between",
           }}
         >
           <View>
-            <Text style={{ fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>
-              PROPS
+            <Text style={{ color: colors.textFaint, fontSize: 11, fontWeight: "600" }}>
+              MARKETS
             </Text>
-            <Text style={{ fontSize: 22, fontWeight: "900", color: colors.ink }}>
+            <Text
+              style={{
+                color: colors.text,
+                fontSize: 16,
+                fontWeight: "700",
+                marginTop: 2,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
               {event.propsCount}
             </Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>
-              POT
+            <Text style={{ color: colors.textFaint, fontSize: 11, fontWeight: "600" }}>
+              VOLUME
             </Text>
-            <Text style={{ fontSize: 22, fontWeight: "900", color: colors.ink }}>
+            <Text
+              style={{
+                color: colors.text,
+                fontSize: 16,
+                fontWeight: "700",
+                marginTop: 2,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
               {event.potTokens.toLocaleString()} ⚡
             </Text>
           </View>
@@ -113,56 +185,33 @@ function EventRow({ event }: { event: MockEvent }) {
   );
 }
 
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 16 }}>
-      <View
-        style={{
-          width: 16,
-          height: 16,
-          backgroundColor: colors.ink,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: "900",
-          color: colors.ink,
-          letterSpacing: 2,
-        }}
-      >
-        {label}
-      </Text>
-      <View
-        style={{
-          flex: 1,
-          height: border.thick,
-          backgroundColor: colors.ink,
-          marginLeft: 12,
-        }}
-      />
-    </View>
-  );
-}
-
 export default function HomeScreen() {
-  const live = mockEvents.filter((e) => e.status === "LIVE" || e.status === "RESOLVING");
-  const upcoming = mockEvents.filter((e) => e.status === "OPEN");
+  const [category, setCategory] = useState<string>("All");
+
+  const filtered =
+    category === "Live"
+      ? mockEvents.filter((e) => e.status === "LIVE" || e.status === "RESOLVING")
+      : mockEvents;
 
   return (
     <ScreenFrame
-      title="Action"
-      subtitle="The bets your friends are running"
-      accent="lime"
+      title="Markets"
+      trailing={
+        <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "500" }}>
+          ⚡ 2,840
+        </Text>
+      }
     >
-      <SectionHeader label="LIVE & RESOLVING" />
-      {live.map((e) => (
-        <EventRow key={e.id} event={e} />
-      ))}
+      <View
+        style={{
+          margin: -16,
+          marginBottom: 12,
+        }}
+      >
+        <CategoryChips active={category} onChange={setCategory} />
+      </View>
 
-      <SectionHeader label="UPCOMING" />
-      {upcoming.map((e) => (
+      {filtered.map((e) => (
         <EventRow key={e.id} event={e} />
       ))}
     </ScreenFrame>

@@ -1,76 +1,84 @@
 import { Pressable, Text, View, GestureResponderEvent } from "react-native";
-import { useState } from "react";
-import { colors, border } from "@/theme/tokens";
+import { colors, radius } from "@/theme/tokens";
+
+type Variant = "primary" | "secondary" | "yes" | "no" | "ghost";
 
 type Props = {
   label: string;
   onPress?: (e: GestureResponderEvent) => void;
-  bg?: keyof typeof colors;
-  fg?: keyof typeof colors;
-  offset?: number;
+  variant?: Variant;
   fullWidth?: boolean;
+  size?: "sm" | "md" | "lg";
+  trailing?: string; // optional right-aligned price/percent
 };
 
-/**
- * Stomp-button: tap = visually compresses against its black drop-block.
- * No soft shadow, no border radius.
- */
+const variantStyle: Record<
+  Variant,
+  { bg: string; fg: string; border?: string }
+> = {
+  primary: { bg: colors.text, fg: "#FFFFFF" },
+  secondary: { bg: colors.bg, fg: colors.text, border: colors.borderStrong },
+  yes: { bg: colors.yesFaint, fg: colors.yes, border: colors.yesFaint },
+  no: { bg: colors.noFaint, fg: colors.no, border: colors.noFaint },
+  ghost: { bg: "transparent", fg: colors.text },
+};
+
+const sizeStyle = {
+  sm: { paddingV: 8, paddingH: 12, font: 13 },
+  md: { paddingV: 12, paddingH: 16, font: 15 },
+  lg: { paddingV: 14, paddingH: 18, font: 16 },
+};
+
 export function BrutalButton({
   label,
   onPress,
-  bg = "lime",
-  fg = "ink",
-  offset = 5,
+  variant = "primary",
   fullWidth,
+  size = "md",
+  trailing,
 }: Props) {
-  const [pressed, setPressed] = useState(false);
-  const shift = pressed ? offset : 0;
+  const v = variantStyle[variant];
+  const s = sizeStyle[size];
 
   return (
-    <View
-      style={{
-        position: "relative",
-        marginRight: offset,
-        marginBottom: offset,
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        backgroundColor: v.bg,
+        borderRadius: radius.md,
+        borderWidth: v.border ? 1 : 0,
+        borderColor: v.border,
+        paddingVertical: s.paddingV,
+        paddingHorizontal: s.paddingH,
         alignSelf: fullWidth ? "stretch" : "flex-start",
-      }}
+        opacity: pressed ? 0.85 : 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: trailing ? "space-between" : "center",
+      })}
     >
-      <View
+      <Text
         style={{
-          position: "absolute",
-          top: offset,
-          left: offset,
-          right: -offset,
-          bottom: -offset,
-          backgroundColor: colors.ink,
-        }}
-      />
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        style={{
-          backgroundColor: colors[bg],
-          borderColor: colors.ink,
-          borderWidth: border.brutal,
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-          transform: [{ translateX: shift }, { translateY: shift }],
+          color: v.fg,
+          fontWeight: "600",
+          fontSize: s.font,
+          letterSpacing: 0.1,
         }}
       >
+        {label}
+      </Text>
+      {trailing ? (
         <Text
           style={{
-            color: colors[fg],
-            fontWeight: "900",
-            fontSize: 18,
-            letterSpacing: 0.5,
-            textAlign: "center",
-            textTransform: "uppercase",
+            color: v.fg,
+            fontWeight: "700",
+            fontSize: s.font,
+            fontVariant: ["tabular-nums"],
           }}
         >
-          {label}
+          {trailing}
         </Text>
-      </Pressable>
-    </View>
+      ) : null}
+    </Pressable>
   );
 }

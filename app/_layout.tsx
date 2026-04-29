@@ -10,7 +10,7 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: "#F5F1E8" },
+            contentStyle: { backgroundColor: "#FFFFFF" },
           }}
         />
       </SafeAreaProvider>
