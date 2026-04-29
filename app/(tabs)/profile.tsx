@@ -1,8 +1,10 @@
 import { View, Text } from "react-native";
+import { useMemo } from "react";
 import { ScreenFrame } from "@/components/ScreenFrame";
 import { BrutalCard } from "@/components/BrutalCard";
 import { BrutalButton } from "@/components/BrutalButton";
 import { colors, radius } from "@/theme/tokens";
+import { useStore } from "@/lib/store";
 
 function StatCell({ label, value }: { label: string; value: string }) {
   return (
@@ -79,6 +81,13 @@ function VerdictRow({
 }
 
 export default function ProfileScreen() {
+  const { balance, props } = useStore();
+
+  const resolvedSeed = useMemo(
+    () => props.filter((p) => p.status === "RESOLVED"),
+    [props]
+  );
+
   return (
     <ScreenFrame title="Profile">
       <BrutalCard padding={20}>
@@ -125,7 +134,7 @@ export default function ProfileScreen() {
             borderTopColor: colors.border,
           }}
         >
-          <StatCell label="Tokens" value="2,840" />
+          <StatCell label="Tokens" value={balance.toLocaleString()} />
           <StatCell label="Prophet score" value="84" />
           <StatCell label="Wins" value="27" />
         </View>
@@ -138,24 +147,28 @@ export default function ProfileScreen() {
           </Text>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
-          <VerdictRow
-            prop="Mark spilled his drink before midnight"
-            side="YES"
-            delta="+320 ⚡"
-            win
-          />
-          <VerdictRow
-            prop="Romi ate four slices of pizza"
-            side="NO"
-            delta="−100 ⚡"
-            win={false}
-          />
-          <VerdictRow
-            prop="Steve attempted Bohemian Rhapsody at karaoke"
-            side="YES"
-            delta="+180 ⚡"
-            win
-          />
+          {resolvedSeed.length === 0 ? (
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: 13,
+                fontWeight: "500",
+                paddingVertical: 12,
+              }}
+            >
+              Place a bet, then resolve a prop. Verdicts show up here.
+            </Text>
+          ) : (
+            resolvedSeed.map((p) => (
+              <VerdictRow
+                key={p.id}
+                prop={p.description}
+                side={p.resolvedSide ?? "YES"}
+                delta={p.resolvedSide === "YES" ? "+180 ⚡" : "−100 ⚡"}
+                win={p.resolvedSide === "YES"}
+              />
+            ))
+          )}
         </View>
       </BrutalCard>
 
