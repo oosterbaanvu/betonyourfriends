@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "BetOnYourFriends",
+    "slug": "betonyourfriends",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "betonyourfriends",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#000000",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.betonyourfriends.app"
+    },
+    "android": {
+      "package": "com.betonyourfriends.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BetOnYourFriends needs your photos so the group can verify what really went down.",
+          "cameraPermission": "BetOnYourFriends needs your camera to capture proof for prop resolutions."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
