@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -196,9 +196,14 @@ function HeaderAction({
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { props, viewerId, balance } = useStore();
+  const { props, viewerId, balance, seedAskUsForEvent } = useStore();
 
   const event = useMemo(() => mockEvents.find((e) => e.id === id), [id]);
+
+  // AI-seed AskUs prompts the first time this event is opened.
+  useEffect(() => {
+    if (event) seedAskUsForEvent(event.id);
+  }, [event, seedAskUsForEvent]);
   const members = useMemo(
     () =>
       event ? mockFriends.filter((f) => event.memberIds.includes(f.id)) : [],
@@ -409,16 +414,8 @@ export default function EventDetailScreen() {
           </Text>
           <View style={{ flex: 1, flexDirection: "row", justifyContent: "flex-end" }}>
             <HeaderAction
-              icon="game-controller"
-              label="PARTY"
-              onPress={() =>
-                router.push({ pathname: "/game/party-launch", params: { eventId: event.id } })
-              }
-              bg="pink"
-            />
-            <HeaderAction
               icon="add"
-              label="ADD PROP"
+              label="ADD BET"
               onPress={() => setShowAdd(true)}
               bg="lime"
             />

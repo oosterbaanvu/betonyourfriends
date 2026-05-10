@@ -18,36 +18,69 @@ export type MockEvent = {
   /** Sharable invite code; in real life Supabase would generate this. */
   inviteCode: string;
   accent: "lime" | "pink" | "violet" | "sun";
+  /** Theme keyword used by the AI seeder to pick AskUs prompts. */
+  vibe?: string;
 };
 
 export type PropStatus = "OPEN" | "AWAITING_VERDICT" | "RESOLVED";
+
+/**
+ * YESNO = parimutuel "X will happen" bet. Subjects can't see it.
+ * WMLT  = "Who's most likely to..." AskUs vote. Everyone sees it; the
+ *         plurality target's identity is revealed in the Mirror once the
+ *         timer expires (anti-influence).
+ */
+export type PropKind = "YESNO" | "WMLT";
 
 export type MockProp = {
   id: string;
   eventId: string;
   description: string;
+  kind: PropKind;
+
   /**
-   * The users this prop is ABOUT (the "subjects").
+   * The users this prop is ABOUT (the "subjects"). YESNO only — WMLT
+   * subjects are determined by the plurality once expired.
    * House rule: a user can never see, wager on, or vote to resolve a prop
-   * where they appear in subjectUserIds. Insider trading on yourself = banned.
+   * where they appear in subjectUserIds.
    */
   subjectUserIds: string[];
   status: PropStatus;
-  /** Parimutuel pools — implied probability is yes / (yes + no). */
+
+  /** Parimutuel pools — implied probability is yes / (yes + no). YESNO only. */
   yesPool: number;
   noPool: number;
-  /** Vote tally for resolution; undefined slots mean "not yet voted". */
+
+  /** Vote tally for YESNO resolution; undefined slots mean "not yet voted". */
   votes: { yes: number; no: number };
-  /** Total eligible voters for this prop (excludes subjects). */
+  /** Total eligible voters for this prop (excludes subjects). YESNO only. */
   voterCount: number;
-  /** Set when status === RESOLVED. */
+  /** Set when status === RESOLVED. YESNO only. */
   resolvedSide?: "YES" | "NO";
+
   /**
-   * Subject's own confession when the prop hits AWAITING_VERDICT. Indexed
-   * per-subject would be ideal once we have a real backend; for the demo
-   * we store one string keyed off the first listed subject.
+   * Subject's own confession when the prop hits AWAITING_VERDICT. YESNO only.
    */
   subjectVerdict?: "CONFESSED" | "DENIED";
+
+  /* ── WMLT-only fields ───────────────────────────────────── */
+  /** Members eligible to be voted for. Defaults to all event members. */
+  candidateUserIds?: string[];
+  /** voterId -> targetId. Hidden from everyone except the voter until expiry. */
+  wmltVotes?: Record<string, string>;
+  /** Plurality target set after expiry. */
+  wmltWinnerIds?: string[];
+
+  /* ── Timing ─────────────────────────────────────────────── */
+  /** Creation timestamp (ms). */
+  createdAt: number;
+  /** Lock timestamp (ms). After this, no more bets/votes — verdicts reveal. */
+  expiresAt: number;
+  /**
+   * Whether this prompt was seeded by the AI on event creation
+   * (lets the UI flag "FROM THE HOUSE" vs user-created).
+   */
+  fromHouse?: boolean;
 };
 
 export const CURRENT_USER_ID = "u_jules";
@@ -65,6 +98,22 @@ export const mockFriends: Friend[] = [
   { id: "u_priya", handle: "@priya" },
 ];
 
+/* ─────────────────────────── Time helpers ─────────────────────────── */
+
+const NOW = Date.now();
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+
+export function minutesUntil(expiresAt: number): number {
+  return Math.round((expiresAt - Date.now()) / MINUTE);
+}
+
+export function isExpired(expiresAt: number): boolean {
+  return Date.now() >= expiresAt;
+}
+
+/* ─────────────────────────── Events ───────────────────────────────── */
+
 export const mockEvents: MockEvent[] = [
   {
     id: "evt_1",
@@ -76,6 +125,7 @@ export const mockEvents: MockEvent[] = [
     memberIds: ["u_jules", "u_mark", "u_romi", "u_dave", "u_steve", "u_sarah"],
     inviteCode: "RAGE-91X",
     accent: "pink",
+    vibe: "birthday",
   },
   {
     id: "evt_2",
@@ -87,6 +137,7 @@ export const mockEvents: MockEvent[] = [
     memberIds: ["u_jules", "u_dave", "u_steve", "u_priya"],
     inviteCode: "BULL-501",
     accent: "lime",
+    vibe: "darts",
   },
   {
     id: "evt_3",
@@ -98,6 +149,7 @@ export const mockEvents: MockEvent[] = [
     memberIds: ["u_jules", "u_steve", "u_dave", "u_romi", "u_sarah"],
     inviteCode: "TIPOFF-7",
     accent: "lime",
+    vibe: "sports",
   },
   {
     id: "evt_4",
@@ -109,6 +161,7 @@ export const mockEvents: MockEvent[] = [
     memberIds: ["u_jules", "u_sarah", "u_priya", "u_romi"],
     inviteCode: "PHD-CTDN",
     accent: "violet",
+    vibe: "office",
   },
   {
     id: "evt_5",
@@ -120,251 +173,312 @@ export const mockEvents: MockEvent[] = [
     memberIds: ["u_jules", "u_steve", "u_romi", "u_priya", "u_mark"],
     inviteCode: "MIC-DROP",
     accent: "sun",
+    vibe: "bar",
   },
 ];
 
+/* ─────────────────────────── Props (seed) ─────────────────────────── */
+
+/**
+ * Default fields for a YESNO prop — keeps the seed list readable.
+ */
+function yesno(p: Partial<MockProp> & { id: string; eventId: string; description: string }): MockProp {
+  return {
+    kind: "YESNO",
+    subjectUserIds: [],
+    status: "OPEN",
+    yesPool: 50,
+    noPool: 50,
+    votes: { yes: 0, no: 0 },
+    voterCount: 5,
+    createdAt: NOW - 30 * MINUTE,
+    expiresAt: NOW + 6 * HOUR,
+    ...p,
+  } as MockProp;
+}
+
+function wmlt(p: Partial<MockProp> & { id: string; eventId: string; description: string; candidateUserIds: string[] }): MockProp {
+  return {
+    kind: "WMLT",
+    subjectUserIds: [],
+    status: "OPEN",
+    yesPool: 0,
+    noPool: 0,
+    votes: { yes: 0, no: 0 },
+    voterCount: p.candidateUserIds.length,
+    wmltVotes: {},
+    createdAt: NOW - 30 * MINUTE,
+    expiresAt: NOW + 4 * HOUR,
+    fromHouse: true,
+    ...p,
+  } as MockProp;
+}
+
 export const mockProps: MockProp[] = [
-  // ─── evt_1 — LIVE ─────────────────────────────────────────────
-  {
+  // ─── evt_1 — Mark's Birthday — LIVE ────────────────────────
+  yesno({
     id: "prp_1",
     eventId: "evt_1",
     description: "Mark spills his drink before midnight",
     subjectUserIds: ["u_mark"],
-    status: "OPEN",
     yesPool: 1280,
     noPool: 720,
-    votes: { yes: 0, no: 0 },
     voterCount: 6,
-  },
-  {
+    expiresAt: NOW + 3 * HOUR,
+  }),
+  yesno({
     id: "prp_2",
     eventId: "evt_1",
     description: "Jules tells the Croatia story (again)",
-    subjectUserIds: ["u_jules"], // hidden from current user
-    status: "OPEN",
+    subjectUserIds: ["u_jules"],
     yesPool: 940,
     noPool: 410,
-    votes: { yes: 0, no: 0 },
     voterCount: 6,
-  },
-  {
+    expiresAt: NOW + 3 * HOUR,
+  }),
+  yesno({
     id: "prp_3",
     eventId: "evt_1",
     description: "Romi falls asleep on the couch before 1 AM",
     subjectUserIds: ["u_romi"],
-    status: "OPEN",
     yesPool: 320,
     noPool: 580,
-    votes: { yes: 0, no: 0 },
     voterCount: 6,
-  },
-  {
+    expiresAt: NOW + 3 * HOUR,
+  }),
+  yesno({
     id: "prp_4",
     eventId: "evt_1",
     description: "There's a tactical chunder before midnight",
-    subjectUserIds: [],
-    status: "AWAITING_VERDICT",
     yesPool: 460,
     noPool: 540,
     votes: { yes: 2, no: 1 },
     voterCount: 7,
-  },
-  {
+    status: "AWAITING_VERDICT",
+    expiresAt: NOW - 5 * MINUTE,
+  }),
+  yesno({
     id: "prp_5",
     eventId: "evt_1",
     description: "Sarah brings the cake she promised",
     subjectUserIds: ["u_sarah"],
-    status: "OPEN",
     yesPool: 880,
     noPool: 120,
-    votes: { yes: 0, no: 0 },
     voterCount: 6,
-  },
-  {
-    id: "prp_6",
+    expiresAt: NOW + 2 * HOUR,
+  }),
+  // ── House WMLT for Mark's Birthday ───
+  wmlt({
+    id: "prp_w1",
     eventId: "evt_1",
-    description: "Dave brings up his crypto portfolio uninvited",
-    subjectUserIds: ["u_dave"],
-    status: "OPEN",
-    yesPool: 1450,
-    noPool: 80,
-    votes: { yes: 0, no: 0 },
-    voterCount: 6,
-  },
+    description: "Who's most likely to embarrass the birthday boy?",
+    candidateUserIds: ["u_jules", "u_mark", "u_romi", "u_dave", "u_steve", "u_sarah"],
+    expiresAt: NOW + 90 * MINUTE,
+  }),
+  wmlt({
+    id: "prp_w2",
+    eventId: "evt_1",
+    description: "Who's most likely to start a 'speech, speech' chant?",
+    candidateUserIds: ["u_jules", "u_mark", "u_romi", "u_dave", "u_steve", "u_sarah"],
+    expiresAt: NOW + 90 * MINUTE,
+  }),
 
-  // ─── evt_2 — Friday Night Darts ───────────────────────────────
-  {
+  // ─── evt_2 — Friday Night Darts ────────────────────────────
+  yesno({
     id: "prp_10",
     eventId: "evt_2",
     description: "Dave hits a 180 at least once",
     subjectUserIds: ["u_dave"],
-    status: "OPEN",
     yesPool: 480,
     noPool: 220,
-    votes: { yes: 0, no: 0 },
     voterCount: 4,
-  },
-  {
+    expiresAt: NOW + 6 * HOUR,
+  }),
+  yesno({
     id: "prp_11",
     eventId: "evt_2",
     description: "Steve overshoots his finish at least 3 times",
     subjectUserIds: ["u_steve"],
-    status: "OPEN",
     yesPool: 320,
     noPool: 180,
-    votes: { yes: 0, no: 0 },
     voterCount: 4,
-  },
-  {
-    id: "prp_12",
+    expiresAt: NOW + 6 * HOUR,
+  }),
+  // ── House WMLT for darts ───
+  wmlt({
+    id: "prp_w10",
     eventId: "evt_2",
-    description: "The match goes to a deciding leg",
-    subjectUserIds: [],
-    status: "OPEN",
-    yesPool: 250,
-    noPool: 150,
-    votes: { yes: 0, no: 0 },
-    voterCount: 4,
-  },
+    description: "Who's most likely to argue about the scoring math?",
+    candidateUserIds: ["u_jules", "u_dave", "u_steve", "u_priya"],
+    expiresAt: NOW + 5 * HOUR,
+  }),
+  wmlt({
+    id: "prp_w11",
+    eventId: "evt_2",
+    description: "Who's most likely to throw with the wrong hand for a laugh?",
+    candidateUserIds: ["u_jules", "u_dave", "u_steve", "u_priya"],
+    expiresAt: NOW + 5 * HOUR,
+  }),
 
-  // ─── evt_3 — Lakers vs Celtics ────────────────────────────────
-  {
+  // ─── evt_3 — Lakers vs Celtics ─────────────────────────────
+  yesno({
     id: "prp_15",
     eventId: "evt_3",
     description: "Lakers cover the spread",
-    subjectUserIds: [],
-    status: "OPEN",
     yesPool: 720,
     noPool: 480,
-    votes: { yes: 0, no: 0 },
     voterCount: 5,
-  },
-  {
-    id: "prp_16",
+    expiresAt: NOW + 25 * HOUR,
+  }),
+  wmlt({
+    id: "prp_w15",
     eventId: "evt_3",
-    description: "More than 220 total points scored",
-    subjectUserIds: [],
-    status: "OPEN",
-    yesPool: 540,
-    noPool: 360,
-    votes: { yes: 0, no: 0 },
-    voterCount: 5,
-  },
+    description: "Who's most likely to yell at the TV like it can hear them?",
+    candidateUserIds: ["u_jules", "u_steve", "u_dave", "u_romi", "u_sarah"],
+    expiresAt: NOW + 25 * HOUR,
+  }),
 
-  // ─── evt_4 — Sarah's thesis ───────────────────────────────────
-  {
+  // ─── evt_4 — Sarah's thesis ────────────────────────────────
+  yesno({
     id: "prp_18",
     eventId: "evt_4",
     description: "Sarah submits before midnight Sunday",
     subjectUserIds: ["u_sarah"],
-    status: "OPEN",
     yesPool: 220,
     noPool: 580,
-    votes: { yes: 0, no: 0 },
     voterCount: 4,
-  },
-  {
-    id: "prp_19",
-    eventId: "evt_4",
-    description: "Sarah pulls at least one all-nighter this week",
-    subjectUserIds: ["u_sarah"],
-    status: "OPEN",
-    yesPool: 920,
-    noPool: 80,
-    votes: { yes: 0, no: 0 },
-    voterCount: 4,
-  },
+    expiresAt: NOW + 50 * HOUR,
+  }),
 
-  // ─── evt_5 — Karaoke (RESOLVING) ──────────────────────────────
-  {
+  // ─── evt_5 — Karaoke (already past) ────────────────────────
+  yesno({
     id: "prp_20",
     eventId: "evt_5",
     description: "Steve attempts Bohemian Rhapsody",
     subjectUserIds: ["u_steve"],
-    status: "AWAITING_VERDICT",
     yesPool: 1240,
     noPool: 360,
     votes: { yes: 4, no: 1 },
     voterCount: 5,
-  },
-  {
+    status: "AWAITING_VERDICT",
+    expiresAt: NOW - 10 * MINUTE,
+  }),
+  yesno({
     id: "prp_22",
     eventId: "evt_5",
     description: "Jules picks a song from before 1990",
     subjectUserIds: ["u_jules"],
-    status: "AWAITING_VERDICT",
     yesPool: 540,
     noPool: 280,
     votes: { yes: 2, no: 1 },
     voterCount: 4,
-  },
-  {
-    id: "prp_23",
-    eventId: "evt_5",
-    description: "Jules duets with Steve at least once",
-    subjectUserIds: ["u_jules"],
     status: "AWAITING_VERDICT",
-    yesPool: 320,
-    noPool: 660,
-    votes: { yes: 1, no: 2 },
-    voterCount: 4,
-  },
+    expiresAt: NOW - 10 * MINUTE,
+  }),
+  // ── Expired WMLT to demo Mirror reveal ───
+  // Jules wins this one — the Mirror will reveal who voted for him.
   {
-    id: "prp_21",
+    id: "prp_w20",
     eventId: "evt_5",
-    description: "Romi cries during a slow song",
-    subjectUserIds: ["u_romi"],
+    kind: "WMLT",
+    description: "Who's most likely to pick a song from before 1990?",
+    subjectUserIds: [],
     status: "RESOLVED",
-    yesPool: 880,
-    noPool: 220,
-    votes: { yes: 5, no: 1 },
+    yesPool: 0,
+    noPool: 0,
+    votes: { yes: 0, no: 0 },
     voterCount: 5,
-    resolvedSide: "YES",
+    candidateUserIds: ["u_jules", "u_steve", "u_romi", "u_priya", "u_mark"],
+    wmltVotes: {
+      u_steve: "u_jules",
+      u_romi: "u_jules",
+      u_priya: "u_steve",
+      u_mark: "u_jules",
+      u_jules: "u_steve",
+    },
+    wmltWinnerIds: ["u_jules"],
+    createdAt: NOW - 3 * HOUR,
+    expiresAt: NOW - 30 * MINUTE,
+    fromHouse: true,
   },
 ];
 
 /**
  * Filter a list of props to those a viewer is allowed to see/wager on.
- * Anti-self-bet rule: hides any prop where the viewer is a subject.
+ * Anti-self-bet rule: hides YESNO props where the viewer is a subject.
+ * WMLT props are visible to everyone while OPEN (the AskUs game is the point);
+ * after expiry they remain in the feed as RESOLVED, with the plurality named.
  */
 export function visiblePropsFor(viewerId: string, props: MockProp[]): MockProp[] {
-  return props.filter((p) => !p.subjectUserIds.includes(viewerId));
+  return props.filter((p) => {
+    if (p.kind === "WMLT") return true;
+    return !p.subjectUserIds.includes(viewerId);
+  });
 }
 
 /**
  * True if the viewer is forbidden from interacting with this prop because
- * the prop is about them.
+ * the prop is about them. Only meaningful for YESNO.
  */
 export function isPropAboutViewer(viewerId: string, prop: MockProp): boolean {
+  if (prop.kind === "WMLT") return false;
   return prop.subjectUserIds.includes(viewerId);
 }
 
-/** Sum of all pools across an event's props — the live pot. */
+/** Sum of all YESNO pools across an event's props — the live pot. */
 export function eventPot(eventId: string, props: MockProp[]): number {
   return props
-    .filter((p) => p.eventId === eventId)
+    .filter((p) => p.eventId === eventId && p.kind === "YESNO")
     .reduce((acc, p) => acc + p.yesPool + p.noPool, 0);
 }
 
 /**
- * Mirror state for a viewer.
- * - secret: count of OPEN props about the viewer (descriptions hidden).
- * - pending: AWAITING_VERDICT props the viewer should judge (descriptions
- *   are unmasked here — the event has ended).
- * - judged: props the viewer already confessed/denied on.
+ * Mirror state for a viewer. Critical anti-influence rule: only EXPIRED
+ * props ever appear here. While anything is still open the viewer learns
+ * nothing about it.
+ *
+ * Includes both YESNO props about the viewer (CONFESS / DENY judgment)
+ * and WMLT props the viewer was the plurality target of (the AskUs reveal).
  */
 export function mirrorStateFor(viewerId: string, props: MockProp[]) {
-  const subjectProps = props.filter((p) => p.subjectUserIds.includes(viewerId));
-  const secret = subjectProps.filter((p) => p.status === "OPEN");
-  const pending = subjectProps.filter(
-    (p) => p.status === "AWAITING_VERDICT" && !p.subjectVerdict
+  const now = Date.now();
+  // YESNO: only props ABOUT the viewer, and only after expiry.
+  const yesnoSubject = props.filter(
+    (p) =>
+      p.kind === "YESNO" &&
+      p.subjectUserIds.includes(viewerId) &&
+      p.expiresAt <= now
   );
-  const judged = subjectProps.filter((p) => p.subjectVerdict);
+  // WMLT: only props where the viewer was the plurality, and only after expiry.
+  const wmltSubject = props.filter(
+    (p) =>
+      p.kind === "WMLT" &&
+      p.expiresAt <= now &&
+      (p.wmltWinnerIds ?? []).includes(viewerId)
+  );
+
+  // YESNO categorization for CONFESS / DENY flow.
+  const pendingYesno = yesnoSubject.filter(
+    (p) => p.status !== "RESOLVED" && !p.subjectVerdict
+  );
+  const judgedYesno = yesnoSubject.filter((p) => !!p.subjectVerdict);
+
+  // Secret count: open YESNO props about you that haven't expired yet.
+  const secret = props.filter(
+    (p) =>
+      p.kind === "YESNO" &&
+      p.subjectUserIds.includes(viewerId) &&
+      p.expiresAt > now
+  );
+
+  // Pending action: things you need to act on right now (YESNO verdicts).
+  // WMLT reveals are passive — informational only.
   return {
     secretCount: secret.length,
-    pendingCount: pending.length,
-    judgedCount: judged.length,
-    pending,
-    judged,
+    pendingCount: pendingYesno.length + wmltSubject.length,
+    pending: pendingYesno,
+    wmltReveals: wmltSubject,
+    judged: judgedYesno,
+    judgedCount: judgedYesno.length,
   };
 }

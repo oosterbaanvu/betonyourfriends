@@ -12,22 +12,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, border } from "@/theme/tokens";
-import { mirrorStateFor, MockProp } from "@/lib/mockData";
+import { mirrorStateFor, MockProp, mockFriends } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
 import { Stamp } from "@/components/Stamp";
+
+const PALETTE = ["#2563EB", "#DB2777", "#059669", "#EA580C", "#7C3AED", "#0891B2", "#CA8A04"];
+function colorFor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+function handleOf(userId: string): string {
+  return mockFriends.find((f) => f.id === userId)?.handle ?? userId;
+}
 
 function StampCard({ prop }: { prop: MockProp }) {
   const verdict = prop.subjectVerdict;
   if (!verdict) return null;
   const stamp = verdict === "CONFESSED" ? "GUILTY" : "SQUEAKY CLEAN";
   return (
-    <View
-      style={{
-        position: "relative",
-        marginRight: 6,
-        marginBottom: 14,
-      }}
-    >
+    <View style={{ position: "relative", marginRight: 6, marginBottom: 14 }}>
       <View
         style={{
           position: "absolute",
@@ -158,7 +162,7 @@ function CaseFile({ prop }: { prop: MockProp }) {
                 letterSpacing: 1.4,
               }}
             >
-              EVIDENCE SEALED
+              TIMER ENDED
             </Text>
           </View>
           <Text
@@ -170,7 +174,7 @@ function CaseFile({ prop }: { prop: MockProp }) {
               fontFamily: "Courier",
             }}
           >
-            CASE #{prop.id.replace("prp_", "").padStart(4, "0")}
+            CASE #{prop.id.replace(/^prp_/, "").padStart(4, "0")}
           </Text>
         </View>
 
@@ -344,10 +348,217 @@ function CaseFile({ prop }: { prop: MockProp }) {
   );
 }
 
+/**
+ * Reveal card for a WMLT prop where the viewer was the plurality winner.
+ * Shows who voted for them, voter-by-voter.
+ */
+function WmltRevealCard({ prop, viewerId }: { prop: MockProp; viewerId: string }) {
+  const voters = Object.entries(prop.wmltVotes ?? {})
+    .filter(([, target]) => target === viewerId)
+    .map(([voter]) => voter);
+  const otherVotes = Object.entries(prop.wmltVotes ?? {}).filter(([, target]) => target !== viewerId);
+
+  return (
+    <View style={{ position: "relative", marginRight: 6, marginBottom: 16 }}>
+      <View
+        style={{
+          position: "absolute",
+          top: 6,
+          left: 6,
+          right: -6,
+          bottom: -6,
+          backgroundColor: colors.lime,
+        }}
+      />
+      <View
+        style={{
+          backgroundColor: colors.ink,
+          borderColor: colors.ink,
+          borderWidth: border.brutal,
+          padding: 18,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.lime,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              marginRight: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.ink,
+                fontFamily: "Courier",
+                fontSize: 10,
+                fontWeight: "900",
+                letterSpacing: 1.4,
+              }}
+            >
+              ASKUS · YOU WON
+            </Text>
+          </View>
+          <Text
+            style={{
+              color: "#A1A1A1",
+              fontFamily: "Courier",
+              fontSize: 11,
+              fontWeight: "700",
+            }}
+          >
+            {voters.length} VOTE{voters.length === 1 ? "" : "S"} FOR YOU
+          </Text>
+        </View>
+
+        <Text
+          style={{
+            color: colors.chalk,
+            fontSize: 19,
+            fontWeight: "900",
+            letterSpacing: -0.4,
+            lineHeight: 24,
+            textTransform: "uppercase",
+            marginBottom: 14,
+          }}
+        >
+          {prop.description}
+        </Text>
+
+        <Text
+          style={{
+            color: colors.lime,
+            fontFamily: "Courier",
+            fontSize: 10,
+            fontWeight: "900",
+            letterSpacing: 1.4,
+            marginBottom: 8,
+          }}
+        >
+          ━ THEY PICKED YOU ━━━━━━━
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+          {voters.length === 0 ? (
+            <Text style={{ color: "#A1A1A1", fontFamily: "Courier", fontSize: 12 }}>
+              (no votes — you won on a tie)
+            </Text>
+          ) : (
+            voters.map((vid) => (
+              <View
+                key={vid}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: colors.lime,
+                  paddingHorizontal: 8,
+                  paddingVertical: 5,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    backgroundColor: colorFor(vid),
+                    marginRight: 6,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ color: "#FFF", fontWeight: "900", fontSize: 11 }}>
+                    {handleOf(vid).replace(/^@/, "")[0]?.toUpperCase() ?? "?"}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    color: colors.ink,
+                    fontWeight: "900",
+                    fontSize: 12,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {handleOf(vid)}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+
+        {otherVotes.length > 0 ? (
+          <>
+            <Text
+              style={{
+                color: "#A1A1A1",
+                fontFamily: "Courier",
+                fontSize: 10,
+                fontWeight: "900",
+                letterSpacing: 1.2,
+                marginBottom: 6,
+              }}
+            >
+              EVERYONE ELSE
+            </Text>
+            <View style={{ gap: 4 }}>
+              {otherVotes.map(([voter, target]) => (
+                <View
+                  key={voter}
+                  style={{ flexDirection: "row", alignItems: "center" }}
+                >
+                  <Text
+                    style={{
+                      color: colors.chalk,
+                      fontFamily: "Courier",
+                      fontSize: 12,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {handleOf(voter)}
+                  </Text>
+                  <Text
+                    style={{
+                      color: "#A1A1A1",
+                      fontFamily: "Courier",
+                      fontSize: 12,
+                      fontWeight: "700",
+                      marginHorizontal: 6,
+                    }}
+                  >
+                    →
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.lime,
+                      fontFamily: "Courier",
+                      fontSize: 12,
+                      fontWeight: "900",
+                    }}
+                  >
+                    {handleOf(target)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export default function JudgmentScreen() {
   const router = useRouter();
   const { props, viewerId } = useStore();
   const mirror = useMemo(() => mirrorStateFor(viewerId, props), [viewerId, props]);
+
+  const hasContent =
+    mirror.pending.length > 0 ||
+    mirror.wmltReveals.length > 0 ||
+    mirror.judged.length > 0;
 
   return (
     <SafeAreaView
@@ -430,7 +641,7 @@ export default function JudgmentScreen() {
             fontWeight: "700",
           }}
         >
-          The events have ended. Time to set the record straight.
+          Timers ended. Time to set the record straight.
         </Text>
       </View>
 
@@ -438,7 +649,7 @@ export default function JudgmentScreen() {
         style={{ flex: 1, backgroundColor: colors.bone }}
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
       >
-        {mirror.pendingCount === 0 ? (
+        {!hasContent ? (
           <View
             style={{
               backgroundColor: colors.chalk,
@@ -460,7 +671,7 @@ export default function JudgmentScreen() {
                 letterSpacing: -0.3,
               }}
             >
-              NO VERDICTS PENDING
+              NOTHING TO REVEAL
             </Text>
             <Text
               style={{
@@ -471,10 +682,12 @@ export default function JudgmentScreen() {
                 textAlign: "center",
               }}
             >
-              Once an event you're a subject of ends, it shows up here.
+              Once a bet about you times out, it shows up here.
             </Text>
           </View>
-        ) : (
+        ) : null}
+
+        {mirror.pending.length > 0 ? (
           <>
             <Text
               style={{
@@ -486,13 +699,34 @@ export default function JudgmentScreen() {
                 marginBottom: 10,
               }}
             >
-              {mirror.pendingCount} CASE{mirror.pendingCount === 1 ? "" : "S"} OPEN
+              {mirror.pending.length} CASE{mirror.pending.length === 1 ? "" : "S"} OPEN
             </Text>
             {mirror.pending.map((p) => (
               <CaseFile key={p.id} prop={p} />
             ))}
           </>
-        )}
+        ) : null}
+
+        {mirror.wmltReveals.length > 0 ? (
+          <>
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: 11,
+                fontWeight: "900",
+                letterSpacing: 1.6,
+                fontFamily: "Courier",
+                marginBottom: 10,
+                marginTop: mirror.pending.length > 0 ? 18 : 0,
+              }}
+            >
+              ASKUS · THEY PICKED YOU
+            </Text>
+            {mirror.wmltReveals.map((p) => (
+              <WmltRevealCard key={p.id} prop={p} viewerId={viewerId} />
+            ))}
+          </>
+        ) : null}
 
         {mirror.judged.length > 0 ? (
           <>
