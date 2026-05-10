@@ -1,288 +1,185 @@
-import { View, Text, TextInput, Pressable } from "react-native";
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
+import { Animated, Easing, Pressable, Text, TextInput, View } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenFrame } from "@/components/ScreenFrame";
-import { BrutalCard } from "@/components/BrutalCard";
-import { BrutalButton } from "@/components/BrutalButton";
-import { PackPicker } from "@/components/PackPicker";
-import { SubjectTagger } from "@/components/SubjectTagger";
-import { colors, border, radius } from "@/theme/tokens";
-import { mockFriends } from "@/lib/mockData";
+import { colors, border } from "@/theme/tokens";
+import { useStore } from "@/lib/store";
 
-type DraftProp = {
-  description: string;
-  subjectIds: string[];
-  fromPack?: string;
-};
-
-const PLACEHOLDERS = [
-  "Friday night darts at The Anchor",
-  "Lakers vs Celtics",
-  "Sarah finishes her thesis",
-  "Saturday bar crawl",
-  "Tom's birthday",
-  "Kitchen Renovation Race",
+const SUGGESTIONS = [
+  "Friday Night",
+  "Game of darts",
+  "Sunday roast",
+  "Karaoke",
+  "Beach day",
+  "Champions League final",
 ];
 
-const inputStyle = {
-  borderColor: colors.ink,
-  borderWidth: border.thick,
-  backgroundColor: colors.bone,
-  paddingHorizontal: 12,
-  paddingVertical: 10,
-  fontSize: 15,
-  fontWeight: "700" as const,
-  color: colors.ink,
-};
+export default function CreateScreen() {
+  const router = useRouter();
+  const { createGame } = useStore();
+  const [title, setTitle] = useState("");
+  const shake = useRef(new Animated.Value(0)).current;
 
-const labelStyle = {
-  fontSize: 12,
-  fontWeight: "700" as const,
-  color: colors.textMuted,
-  letterSpacing: 0.6,
-  marginBottom: 6,
-  textTransform: "uppercase" as const,
-};
+  const canSubmit = title.trim().length > 0;
 
-function SectionHeader({
-  title,
-  hint,
-  count,
-}: {
-  title: string;
-  hint?: string;
-  count?: number;
-}) {
+  const onCreate = () => {
+    if (!canSubmit) {
+      Animated.sequence([
+        Animated.timing(shake, { toValue: 8, duration: 60, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: -8, duration: 60, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: 0, duration: 60, easing: Easing.linear, useNativeDriver: true }),
+      ]).start();
+      return;
+    }
+    const res = createGame(title);
+    if (res.ok) router.push(`/lobby/${res.id}`);
+  };
+
   return (
-    <View style={{ marginBottom: 10, marginTop: 8 }}>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: "800",
-            color: colors.text,
-            letterSpacing: -0.2,
-          }}
-        >
-          {title}
-        </Text>
-        {typeof count === "number" ? (
+    <ScreenFrame title="New game" accent="pink">
+      <Text
+        style={{
+          color: colors.ink,
+          fontSize: 28,
+          fontWeight: "900",
+          letterSpacing: -0.8,
+          textTransform: "uppercase",
+          marginTop: 6,
+          lineHeight: 32,
+        }}
+      >
+        What are you{`\n`}playing tonight?
+      </Text>
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontFamily: "Courier",
+          fontSize: 12,
+          fontWeight: "700",
+          letterSpacing: 0.6,
+          marginTop: 8,
+          marginBottom: 22,
+        }}
+      >
+        Give it a name. Bring your friends. Bet on anything that happens.
+      </Text>
+
+      <Animated.View style={{ transform: [{ translateX: shake }] }}>
+        <View style={{ position: "relative", marginRight: 5, marginBottom: 16 }}>
           <View
             style={{
-              marginLeft: 8,
-              backgroundColor: colors.bgInset,
-              paddingHorizontal: 7,
-              paddingVertical: 1,
-              borderRadius: radius.pill,
+              position: "absolute",
+              top: 5,
+              left: 5,
+              right: -5,
+              bottom: -5,
+              backgroundColor: colors.ink,
+            }}
+          />
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Friday Night"
+            placeholderTextColor={colors.textFaint}
+            autoFocus
+            style={{
+              backgroundColor: colors.chalk,
+              borderColor: colors.ink,
+              borderWidth: border.brutal,
+              paddingHorizontal: 18,
+              paddingVertical: 22,
+              fontSize: 26,
+              fontWeight: "900",
+              color: colors.ink,
+              letterSpacing: -0.6,
+            }}
+            onSubmitEditing={onCreate}
+            returnKeyType="go"
+          />
+        </View>
+      </Animated.View>
+
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 22 }}>
+        {SUGGESTIONS.map((s) => (
+          <Pressable
+            key={s}
+            onPress={() => setTitle(s)}
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              backgroundColor: colors.chalk,
+              borderColor: colors.ink,
+              borderWidth: border.thick,
             }}
           >
             <Text
               style={{
-                color: colors.textMuted,
+                color: colors.ink,
+                fontFamily: "Courier",
                 fontSize: 11,
-                fontWeight: "700",
+                fontWeight: "900",
+                letterSpacing: 1,
               }}
             >
-              {count}
+              {s.toUpperCase()}
             </Text>
-          </View>
-        ) : null}
-      </View>
-      {hint ? (
-        <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
-          {hint}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-export default function CreateScreen() {
-  const [title, setTitle] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [props, setProps] = useState<DraftProp[]>([
-    { description: "", subjectIds: [] },
-  ]);
-
-  const placeholder = useMemo(
-    () => PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)],
-    []
-  );
-
-  const addProp = () =>
-    setProps((p) => [...p, { description: "", subjectIds: [] }]);
-  const removeProp = (i: number) =>
-    setProps((p) => (p.length > 1 ? p.filter((_, idx) => idx !== i) : p));
-  const updateText = (i: number, v: string) =>
-    setProps((p) =>
-      p.map((x, idx) => (idx === i ? { ...x, description: v } : x))
-    );
-  const updateSubjects = (i: number, ids: string[]) =>
-    setProps((p) =>
-      p.map((x, idx) => (idx === i ? { ...x, subjectIds: ids } : x))
-    );
-
-  const applyPack = (newProps: string[], packName: string) => {
-    const drafts: DraftProp[] = newProps.map((d) => ({
-      description: d,
-      subjectIds: [],
-      fromPack: packName,
-    }));
-    setProps((p) => {
-      if (
-        p.length === 1 &&
-        p[0].description.trim() === "" &&
-        p[0].subjectIds.length === 0
-      ) {
-        return drafts;
-      }
-      return [...p, ...drafts];
-    });
-  };
-
-  const validCount = props.filter((p) => p.description.trim().length > 0).length;
-  const canLaunch = title.trim().length > 0 && validCount > 0;
-
-  return (
-    <ScreenFrame title="New event" accent="pink">
-      <SectionHeader
-        title="What's the event?"
-        hint="Anything goes. A darts night, the playoffs, your friend's deadline. If your friends will be there, you can wager on it."
-      />
-      <BrutalCard>
-        <Text style={labelStyle}>Title</Text>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textFaint}
-          style={inputStyle}
-        />
-
-        <Text style={[labelStyle, { marginTop: 14 }]}>Starts at</Text>
-        <TextInput
-          value={startsAt}
-          onChangeText={setStartsAt}
-          placeholder="Tonight, 9:00 PM"
-          placeholderTextColor={colors.textFaint}
-          style={inputStyle}
-        />
-      </BrutalCard>
-
-      <SectionHeader
-        title="Need inspiration?"
-        hint="Tap a pack to load ready-made bets in one shot."
-      />
-      <View style={{ marginHorizontal: -16 }}>
-        <View style={{ paddingLeft: 16 }}>
-          <PackPicker onApply={applyPack} />
-        </View>
+          </Pressable>
+        ))}
       </View>
 
-      <View style={{ height: 8 }} />
-
-      <SectionHeader
-        title="Predictions"
-        hint="One question per card. You can keep adding props after the event launches too."
-        count={props.length}
-      />
-
-      {props.map((p, i) => (
-        <BrutalCard key={i}>
+      <Pressable onPress={onCreate}>
+        <View style={{ position: "relative", marginRight: 5, marginBottom: 5 }}>
           <View
             style={{
+              position: "absolute",
+              top: 5,
+              left: 5,
+              right: -5,
+              bottom: -5,
+              backgroundColor: colors.ink,
+            }}
+          />
+          <View
+            style={{
+              backgroundColor: canSubmit ? colors.lime : colors.borderSoft,
+              borderColor: colors.ink,
+              borderWidth: border.brutal,
+              paddingVertical: 22,
               flexDirection: "row",
-              justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 8,
+              justifyContent: "center",
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={labelStyle}>Prop {i + 1}</Text>
-              {p.fromPack ? (
-                <View
-                  style={{
-                    marginLeft: 8,
-                    marginBottom: 4,
-                    backgroundColor: colors.primaryFaint,
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: radius.pill,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.primary,
-                      fontSize: 10,
-                      fontWeight: "700",
-                    }}
-                  >
-                    {p.fromPack}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            {props.length > 1 ? (
-              <Pressable
-                onPress={() => removeProp(i)}
-                hitSlop={8}
-                style={{ flexDirection: "row", alignItems: "center" }}
-              >
-                <Ionicons name="close" size={14} color={colors.no} />
-                <Text
-                  style={{
-                    marginLeft: 2,
-                    color: colors.no,
-                    fontSize: 13,
-                    fontWeight: "600",
-                  }}
-                >
-                  Remove
-                </Text>
-              </Pressable>
-            ) : null}
+            <Ionicons name="flash" size={20} color={colors.ink} />
+            <Text
+              style={{
+                marginLeft: 8,
+                color: colors.ink,
+                fontWeight: "900",
+                fontSize: 18,
+                letterSpacing: 1.4,
+              }}
+            >
+              CREATE GAME
+            </Text>
           </View>
-          <TextInput
-            value={p.description}
-            onChangeText={(v) => updateText(i, v)}
-            placeholder='e.g. "Dave hits a 180 in the first leg"'
-            placeholderTextColor={colors.textFaint}
-            multiline
-            style={[inputStyle, { minHeight: 56, textAlignVertical: "top" }]}
-          />
+        </View>
+      </Pressable>
 
-          <View style={{ height: 14 }} />
-
-          <SubjectTagger
-            friends={mockFriends}
-            selected={p.subjectIds}
-            onChange={(ids) => updateSubjects(i, ids)}
-          />
-        </BrutalCard>
-      ))}
-
-      <BrutalButton
-        label="Add another prop"
-        onPress={addProp}
-        variant="secondary"
-        fullWidth
-      />
-
-      <View style={{ height: 12 }} />
-
-      <BrutalButton
-        label={
-          canLaunch
-            ? `Launch event with ${validCount} prop${validCount === 1 ? "" : "s"}`
-            : "Add a title and one prop to launch"
-        }
-        onPress={canLaunch ? () => {} : undefined}
-        variant="primary"
-        fullWidth
-        size="lg"
-      />
-
-      <View style={{ height: 24 }} />
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontFamily: "Courier",
+          fontSize: 11,
+          fontWeight: "700",
+          letterSpacing: 0.6,
+          marginTop: 14,
+          textAlign: "center",
+        }}
+      >
+        NEXT STEP: SHARE THE JOIN CODE WITH YOUR FRIENDS
+      </Text>
     </ScreenFrame>
   );
 }
