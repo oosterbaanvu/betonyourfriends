@@ -429,13 +429,79 @@ export default function Landing() {
       <View style={{ height: border.brutal, backgroundColor: colors.ink }} />
 
       {/* Two stacked tiles */}
-      <View style={{ flex: 1, padding: 16, paddingBottom: 22 }}>
+      <View style={{ flex: 1, padding: 16, paddingBottom: 12 }}>
         <MirrorTile
           pendingCount={pendingCount}
           secretCount={secretCount}
           onPress={() => router.push("/judgment")}
         />
         <PitTile onPress={() => router.push("/markets")} />
+      </View>
+
+      {/* Party Mode strip */}
+      <View style={{ paddingHorizontal: 16, paddingBottom: 18 }}>
+        <Pressable onPress={() => router.push("/game/party-launch")}>
+          <View style={{ position: "relative", marginRight: 5 }}>
+            <View
+              style={{
+                position: "absolute",
+                top: 5,
+                left: 5,
+                right: -5,
+                bottom: -5,
+                backgroundColor: colors.ink,
+              }}
+            />
+            <View
+              style={{
+                backgroundColor: colors.pink,
+                borderColor: colors.ink,
+                borderWidth: border.brutal,
+                padding: 14,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: 42,
+                  height: 42,
+                  backgroundColor: colors.ink,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="game-controller" size={20} color={colors.lime} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: colors.ink,
+                    fontFamily: "Courier",
+                    fontSize: 10,
+                    fontWeight: "900",
+                    letterSpacing: 1.4,
+                  }}
+                >
+                  PARTY MODE · WHO'S MOST LIKELY
+                </Text>
+                <Text
+                  style={{
+                    color: colors.ink,
+                    fontSize: 18,
+                    fontWeight: "900",
+                    letterSpacing: -0.4,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  START A GAME
+                </Text>
+              </View>
+              <Ionicons name="arrow-forward" size={20} color={colors.ink} />
+            </View>
+          </View>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
