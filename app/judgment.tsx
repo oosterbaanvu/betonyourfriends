@@ -12,7 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, border } from "@/theme/tokens";
-import { mirrorStateFor, MockProp, mockFriends } from "@/lib/mockData";
+import {
+  mirrorStateFor,
+  MockProp,
+  mockFriends,
+  subjectAgreement,
+} from "@/lib/mockData";
 import { useStore } from "@/lib/store";
 import { Stamp } from "@/components/Stamp";
 
@@ -26,10 +31,12 @@ function handleOf(userId: string): string {
   return mockFriends.find((f) => f.id === userId)?.handle ?? userId;
 }
 
-function StampCard({ prop }: { prop: MockProp }) {
-  const verdict = prop.subjectVerdict;
+function StampCard({ prop, viewerId }: { prop: MockProp; viewerId: string }) {
+  const verdict = prop.subjectVerdicts?.[viewerId];
   if (!verdict) return null;
   const stamp = verdict === "CONFESSED" ? "GUILTY" : "SQUEAKY CLEAN";
+  const agreement = subjectAgreement(prop);
+  const deadlock = agreement === "MIXED" && prop.status === "AWAITING_VERDICT";
   return (
     <View style={{ position: "relative", marginRight: 6, marginBottom: 14 }}>
       <View
@@ -56,7 +63,7 @@ function StampCard({ prop }: { prop: MockProp }) {
         <View style={{ flex: 1, paddingRight: 14 }}>
           <Text
             style={{
-              color: colors.textMuted,
+              color: deadlock ? colors.blood : colors.textMuted,
               fontSize: 10,
               fontWeight: "900",
               letterSpacing: 1.4,
@@ -64,7 +71,7 @@ function StampCard({ prop }: { prop: MockProp }) {
               marginBottom: 4,
             }}
           >
-            CASE CLOSED
+            {deadlock ? "DEADLOCK · GROUP DECIDES" : "CASE CLOSED"}
           </Text>
           <Text
             style={{
@@ -84,7 +91,134 @@ function StampCard({ prop }: { prop: MockProp }) {
   );
 }
 
-function CaseFile({ prop }: { prop: MockProp }) {
+function CoSubjectStatus({ prop, viewerId }: { prop: MockProp; viewerId: string }) {
+  const others = prop.subjectUserIds.filter((id) => id !== viewerId);
+  if (others.length === 0) return null;
+  const vs = prop.subjectVerdicts ?? {};
+  return (
+    <View
+      style={{
+        backgroundColor: colors.bone,
+        borderColor: colors.ink,
+        borderWidth: border.thick,
+        padding: 10,
+        marginTop: 12,
+      }}
+    >
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontSize: 10,
+          fontWeight: "900",
+          letterSpacing: 1.4,
+          fontFamily: "Courier",
+          marginBottom: 4,
+        }}
+      >
+        CO-SUBJECTS
+      </Text>
+      {others.map((id) => {
+        const v = vs[id];
+        const friend = mockFriends.find((f) => f.id === id);
+        const label = v
+          ? v === "CONFESSED"
+            ? "SAYS GUILTY"
+            : "SAYS SQUEAKY CLEAN"
+          : "WAITING ON THEM";
+        const tone = v === "CONFESSED" ? colors.blood : v === "DENIED" ? colors.violet : colors.textMuted;
+        return (
+          <View
+            key={id}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 2,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.ink,
+                fontFamily: "Courier",
+                fontSize: 12,
+                fontWeight: "900",
+              }}
+            >
+              {friend?.handle ?? id}
+            </Text>
+            <Text
+              style={{
+                marginLeft: 8,
+                color: tone,
+                fontFamily: "Courier",
+                fontSize: 11,
+                fontWeight: "900",
+                letterSpacing: 0.8,
+              }}
+            >
+              · {label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function WaitingCard({ prop, viewerId }: { prop: MockProp; viewerId: string }) {
+  const myVerdict = prop.subjectVerdicts?.[viewerId];
+  const stamp = myVerdict === "CONFESSED" ? "GUILTY" : "SQUEAKY CLEAN";
+  return (
+    <View style={{ position: "relative", marginRight: 6, marginBottom: 14 }}>
+      <View
+        style={{
+          position: "absolute",
+          top: 6,
+          left: 6,
+          right: -6,
+          bottom: -6,
+          backgroundColor: colors.ink,
+        }}
+      />
+      <View
+        style={{
+          backgroundColor: colors.warnBg,
+          borderColor: colors.ink,
+          borderWidth: border.brutal,
+          padding: 16,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.ink,
+            fontFamily: "Courier",
+            fontSize: 11,
+            fontWeight: "900",
+            letterSpacing: 1.4,
+            marginBottom: 6,
+          }}
+        >
+          YOUR VERDICT IS IN · WAITING ON CO-SUBJECTS
+        </Text>
+        <Text
+          style={{
+            color: colors.ink,
+            fontSize: 18,
+            fontWeight: "900",
+            letterSpacing: -0.3,
+            lineHeight: 22,
+            marginBottom: 12,
+          }}
+        >
+          {prop.description}
+        </Text>
+        <Stamp verdict={stamp} size="sm" />
+        <CoSubjectStatus prop={prop} viewerId={viewerId} />
+      </View>
+    </View>
+  );
+}
+
+function CaseFile({ prop, viewerId }: { prop: MockProp; viewerId: string }) {
   const { confessOrDeny } = useStore();
   const [busy, setBusy] = useState<null | "CONFESSED" | "DENIED">(null);
   const animScale = useState(() => new Animated.Value(1))[0];
@@ -341,8 +475,10 @@ function CaseFile({ prop }: { prop: MockProp }) {
             fontFamily: "Courier",
           }}
         >
-          YOUR VERDICT RESOLVES THIS PROP. CHOOSE WISELY.
+          YOUR VERDICT IS FINAL. ALL SUBJECTS HAVE TO WEIGH IN.
         </Text>
+
+        <CoSubjectStatus prop={prop} viewerId={viewerId} />
       </View>
     </Animated.View>
   );
@@ -557,6 +693,7 @@ export default function JudgmentScreen() {
 
   const hasContent =
     mirror.pending.length > 0 ||
+    mirror.waiting.length > 0 ||
     mirror.wmltReveals.length > 0 ||
     mirror.judged.length > 0;
 
@@ -702,7 +839,28 @@ export default function JudgmentScreen() {
               {mirror.pending.length} CASE{mirror.pending.length === 1 ? "" : "S"} OPEN
             </Text>
             {mirror.pending.map((p) => (
-              <CaseFile key={p.id} prop={p} />
+              <CaseFile key={p.id} prop={p} viewerId={viewerId} />
+            ))}
+          </>
+        ) : null}
+
+        {mirror.waiting.length > 0 ? (
+          <>
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: 11,
+                fontWeight: "900",
+                letterSpacing: 1.6,
+                fontFamily: "Courier",
+                marginBottom: 10,
+                marginTop: mirror.pending.length > 0 ? 18 : 0,
+              }}
+            >
+              WAITING ON CO-SUBJECTS
+            </Text>
+            {mirror.waiting.map((p) => (
+              <WaitingCard key={p.id} prop={p} viewerId={viewerId} />
             ))}
           </>
         ) : null}
@@ -717,7 +875,7 @@ export default function JudgmentScreen() {
                 letterSpacing: 1.6,
                 fontFamily: "Courier",
                 marginBottom: 10,
-                marginTop: mirror.pending.length > 0 ? 18 : 0,
+                marginTop: mirror.pending.length > 0 || mirror.waiting.length > 0 ? 18 : 0,
               }}
             >
               ASKUS · THEY PICKED YOU
@@ -744,7 +902,7 @@ export default function JudgmentScreen() {
               WALL OF SHAME
             </Text>
             {mirror.judged.map((p) => (
-              <StampCard key={p.id} prop={p} />
+              <StampCard key={p.id} prop={p} viewerId={viewerId} />
             ))}
           </>
         ) : null}

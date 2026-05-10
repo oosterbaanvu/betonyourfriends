@@ -2,7 +2,12 @@ import { Pressable, Text, View, Image, Alert, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, border } from "@/theme/tokens";
-import { MockProp, mockFriends } from "@/lib/mockData";
+import {
+  groupVoteOpen,
+  MockProp,
+  mockFriends,
+  subjectAgreement,
+} from "@/lib/mockData";
 import { asCents, impliedYesProb, impliedNoProb } from "@/lib/odds";
 import { useStore } from "@/lib/store";
 import { CountdownChip } from "./CountdownChip";
@@ -98,8 +103,119 @@ function YesNoBlock({
 }
 
 function VoteRow({ prop }: { prop: MockProp }) {
-  const { castVote, votes } = useStore();
+  const { castVote, votes, viewerId } = useStore();
   const myVote = votes[prop.id];
+
+  const hasSubjects = prop.subjectUserIds.length > 0;
+  const fallbackOpen = groupVoteOpen(prop);
+  const verdicts = prop.subjectVerdicts ?? {};
+  const subjectsVoted = prop.subjectUserIds.filter((id) => !!verdicts[id]).length;
+  const viewerIsSubject = prop.subjectUserIds.includes(viewerId);
+
+  /* Subjects still owe a verdict → no group vote yet. */
+  if (hasSubjects && !fallbackOpen) {
+    return (
+      <View>
+        <View
+          style={{
+            alignSelf: "flex-start",
+            backgroundColor: colors.warnBg,
+            borderColor: colors.ink,
+            borderWidth: border.thick,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ color: colors.ink, fontSize: 10, fontWeight: "900", letterSpacing: 1.4 }}>
+            WAITING ON SUBJECTS
+          </Text>
+        </View>
+        <Text
+          style={{
+            color: colors.ink,
+            fontSize: 14,
+            fontWeight: "800",
+            marginBottom: 6,
+          }}
+        >
+          {subjectsVoted} OF {prop.subjectUserIds.length} WEIGHED IN
+        </Text>
+        <View style={{ gap: 4 }}>
+          {prop.subjectUserIds.map((id) => {
+            const v = verdicts[id];
+            const handle = handleOf(id);
+            return (
+              <View key={id} style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    backgroundColor: v ? colors.lime : colors.borderSoft,
+                    borderColor: colors.ink,
+                    borderWidth: 2,
+                    marginRight: 8,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: colors.ink,
+                    fontFamily: "Courier",
+                    fontSize: 12,
+                    fontWeight: "900",
+                  }}
+                >
+                  {handle}
+                </Text>
+                <Text
+                  style={{
+                    marginLeft: 6,
+                    color: v ? colors.ink : colors.textMuted,
+                    fontFamily: "Courier",
+                    fontSize: 11,
+                    fontWeight: "700",
+                    letterSpacing: 0.8,
+                  }}
+                >
+                  · {v ? "IN" : "WAITING"}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+        {viewerIsSubject ? (
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontFamily: "Courier",
+              fontSize: 11,
+              fontWeight: "700",
+              marginTop: 10,
+              letterSpacing: 0.6,
+            }}
+          >
+            CAST YOUR VERDICT FROM THE MIRROR.
+          </Text>
+        ) : (
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontFamily: "Courier",
+              fontSize: 11,
+              fontWeight: "700",
+              marginTop: 10,
+              letterSpacing: 0.6,
+            }}
+          >
+            IF THEY DISAGREE, THE GROUP WILL DECIDE.
+          </Text>
+        )}
+      </View>
+    );
+  }
+
+  /* Group fallback open — either no subjects, or deadlock. */
+  const deadlock = hasSubjects && subjectAgreement(prop) === "MIXED";
 
   const pickPhoto = async () => {
     const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -129,7 +245,7 @@ function VoteRow({ prop }: { prop: MockProp }) {
       <View
         style={{
           alignSelf: "flex-start",
-          backgroundColor: colors.warnBg,
+          backgroundColor: deadlock ? colors.blood : colors.warnBg,
           borderColor: colors.ink,
           borderWidth: border.thick,
           paddingHorizontal: 8,
@@ -137,8 +253,15 @@ function VoteRow({ prop }: { prop: MockProp }) {
           marginBottom: 12,
         }}
       >
-        <Text style={{ color: colors.ink, fontSize: 10, fontWeight: "900", letterSpacing: 1.4 }}>
-          AWAITING VERDICT
+        <Text
+          style={{
+            color: deadlock ? colors.chalk : colors.ink,
+            fontSize: 10,
+            fontWeight: "900",
+            letterSpacing: 1.4,
+          }}
+        >
+          {deadlock ? "DEADLOCK · GROUP DECIDES" : "AWAITING VERDICT"}
         </Text>
       </View>
 

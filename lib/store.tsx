@@ -12,6 +12,7 @@ import {
   CURRENT_USER_ID,
   MockEvent,
   MockProp,
+  groupVoteOpen,
   mockEvents,
   mockFriends,
   mockProps,
@@ -235,6 +236,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (prop.status !== "AWAITING_VERDICT") {
         return { ok: false, reason: "Prop is not awaiting a verdict" };
       }
+      // Group fallback only opens when subjects deadlock (or there are none).
+      if (prop.subjectUserIds.length > 0) {
+        if (!groupVoteOpen(prop)) {
+          return { ok: false, reason: "Subjects haven't weighed in yet" };
+        }
+      }
 
       const previous = votes[propId];
 
@@ -322,17 +329,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (Date.now() < prop.expiresAt) {
         return { ok: false, reason: "Bet hasn't timed out yet" };
       }
-      const winningSide: "YES" | "NO" = verdict === "CONFESSED" ? "YES" : "NO";
+      if (prop.subjectVerdicts?.[CURRENT_USER_ID]) {
+        return { ok: false, reason: "You've already weighed in" };
+      }
 
       setProps((prev) =>
         prev.map((p) => {
           if (p.id !== propId) return p;
-          return {
-            ...p,
-            subjectVerdict: verdict,
-            status: "RESOLVED",
-            resolvedSide: winningSide,
+          const newVerdicts: Record<string, "CONFESSED" | "DENIED"> = {
+            ...(p.subjectVerdicts ?? {}),
+            [CURRENT_USER_ID]: verdict,
           };
+          const allIn = p.subjectUserIds.every((id) => !!newVerdicts[id]);
+          if (!allIn) {
+            // Still waiting on co-subjects.
+            return { ...p, subjectVerdicts: newVerdicts };
+          }
+          const list = p.subjectUserIds.map((id) => newVerdicts[id]);
+          const allConfess = list.every((v) => v === "CONFESSED");
+          const allDeny = list.every((v) => v === "DENIED");
+          if (allConfess) {
+            return {
+              ...p,
+              subjectVerdicts: newVerdicts,
+              status: "RESOLVED" as PropStatus,
+              resolvedSide: "YES" as const,
+            };
+          }
+          if (allDeny) {
+            return {
+              ...p,
+              subjectVerdicts: newVerdicts,
+              status: "RESOLVED" as PropStatus,
+              resolvedSide: "NO" as const,
+            };
+          }
+          // Disagreement — leave AWAITING_VERDICT; group vote takes over.
+          return { ...p, subjectVerdicts: newVerdicts };
         })
       );
       return { ok: true };
