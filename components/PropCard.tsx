@@ -2,14 +2,26 @@ import { Pressable, Text, View, Image, Alert, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, border } from "@/theme/tokens";
-import { MockProp } from "@/lib/mockData";
+import { MockProp, mockFriends } from "@/lib/mockData";
 import { asCents, impliedYesProb, impliedNoProb } from "@/lib/odds";
 import { useStore } from "@/lib/store";
+import { CountdownChip } from "./CountdownChip";
 
 type Props = {
   prop: MockProp;
   onTapWager: (prop: MockProp, side: "YES" | "NO") => void;
 };
+
+const PALETTE = ["#2563EB", "#DB2777", "#059669", "#EA580C", "#7C3AED", "#0891B2", "#CA8A04"];
+function colorFor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+function handleOf(userId: string): string {
+  return mockFriends.find((f) => f.id === userId)?.handle ?? userId;
+}
 
 function ProbabilityBar({ yesProb }: { yesProb: number }) {
   return (
@@ -44,13 +56,7 @@ function YesNoBlock({
   const fg = isYes ? colors.ink : colors.chalk;
   return (
     <Pressable onPress={onPress} style={{ flex: 1 }}>
-      <View
-        style={{
-          position: "relative",
-          marginRight: 4,
-          marginBottom: 4,
-        }}
-      >
+      <View style={{ position: "relative", marginRight: 4, marginBottom: 4 }}>
         <View
           style={{
             position: "absolute",
@@ -71,14 +77,7 @@ function YesNoBlock({
             opacity: active ? 1 : 1,
           }}
         >
-          <Text
-            style={{
-              color: fg,
-              fontSize: 13,
-              fontWeight: "900",
-              letterSpacing: 1.4,
-            }}
-          >
+          <Text style={{ color: fg, fontSize: 13, fontWeight: "900", letterSpacing: 1.4 }}>
             {side}
           </Text>
           <Text
@@ -138,14 +137,7 @@ function VoteRow({ prop }: { prop: MockProp }) {
           marginBottom: 12,
         }}
       >
-        <Text
-          style={{
-            color: colors.ink,
-            fontSize: 10,
-            fontWeight: "900",
-            letterSpacing: 1.4,
-          }}
-        >
+        <Text style={{ color: colors.ink, fontSize: 10, fontWeight: "900", letterSpacing: 1.4 }}>
           AWAITING VERDICT
         </Text>
       </View>
@@ -154,22 +146,14 @@ function VoteRow({ prop }: { prop: MockProp }) {
         <Pressable onPress={() => cast("YES")} style={{ flex: 1 }}>
           <View
             style={{
-              backgroundColor:
-                myVote?.side === "YES" ? colors.lime : colors.chalk,
+              backgroundColor: myVote?.side === "YES" ? colors.lime : colors.chalk,
               borderColor: colors.ink,
               borderWidth: border.thick,
               paddingVertical: 12,
               alignItems: "center",
             }}
           >
-            <Text
-              style={{
-                color: colors.ink,
-                fontSize: 12,
-                fontWeight: "900",
-                letterSpacing: 1.2,
-              }}
-            >
+            <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900", letterSpacing: 1.2 }}>
               IT HAPPENED
             </Text>
           </View>
@@ -177,8 +161,7 @@ function VoteRow({ prop }: { prop: MockProp }) {
         <Pressable onPress={() => cast("NO")} style={{ flex: 1 }}>
           <View
             style={{
-              backgroundColor:
-                myVote?.side === "NO" ? colors.blood : colors.chalk,
+              backgroundColor: myVote?.side === "NO" ? colors.blood : colors.chalk,
               borderColor: colors.ink,
               borderWidth: border.thick,
               paddingVertical: 12,
@@ -212,20 +195,8 @@ function VoteRow({ prop }: { prop: MockProp }) {
           justifyContent: "center",
         }}
       >
-        <Ionicons
-          name="camera"
-          size={14}
-          color={colors.ink}
-          style={{ marginRight: 6 }}
-        />
-        <Text
-          style={{
-            color: colors.ink,
-            fontWeight: "900",
-            fontSize: 12,
-            letterSpacing: 1.2,
-          }}
-        >
+        <Ionicons name="camera" size={14} color={colors.ink} style={{ marginRight: 6 }} />
+        <Text style={{ color: colors.ink, fontWeight: "900", fontSize: 12, letterSpacing: 1.2 }}>
           {myVote?.photoUri ? "REPLACE EVIDENCE" : "ATTACH EVIDENCE"}
         </Text>
       </Pressable>
@@ -254,8 +225,7 @@ function VoteRow({ prop }: { prop: MockProp }) {
           fontFamily: "Courier",
         }}
       >
-        {totalCast} OF {prop.voterCount} VOTED, {prop.votes.yes} YES /{" "}
-        {prop.votes.no} NO
+        {totalCast} OF {prop.voterCount} VOTED, {prop.votes.yes} YES / {prop.votes.no} NO
       </Text>
     </View>
   );
@@ -300,12 +270,7 @@ function ResolvedRow({ prop }: { prop: MockProp }) {
           }}
         >
           YOU BET {pos.amount} ON {pos.side},{" "}
-          <Text
-            style={{
-              color: won ? colors.yes : colors.no,
-              fontWeight: "900",
-            }}
-          >
+          <Text style={{ color: won ? colors.yes : colors.no, fontWeight: "900" }}>
             {won ? "WON" : "LOST"}
           </Text>
         </Text>
@@ -325,11 +290,275 @@ function ResolvedRow({ prop }: { prop: MockProp }) {
   );
 }
 
+/* ─────────────────────── WMLT (AskUs) variant ─────────────────────── */
+
+function FaceTile({
+  userId,
+  handle,
+  isViewer,
+  selected,
+  onPress,
+  disabled,
+}: {
+  userId: string;
+  handle: string;
+  isViewer: boolean;
+  selected: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <View style={{ width: "33.333%", padding: 3 }}>
+      <Pressable onPress={disabled ? undefined : onPress}>
+        <View style={{ position: "relative", marginRight: 4, marginBottom: 4 }}>
+          <View
+            style={{
+              position: "absolute",
+              top: 4,
+              left: 4,
+              right: -4,
+              bottom: -4,
+              backgroundColor: colors.ink,
+            }}
+          />
+          <View
+            style={{
+              backgroundColor: selected ? colors.lime : colors.chalk,
+              borderColor: colors.ink,
+              borderWidth: border.thick,
+              padding: 8,
+              minHeight: 88,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: disabled ? 0.85 : 1,
+            }}
+          >
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                backgroundColor: colorFor(userId),
+                borderColor: colors.ink,
+                borderWidth: 2,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 6,
+              }}
+            >
+              <Text style={{ color: "#FFF", fontWeight: "900", fontSize: 16 }}>
+                {handle.replace(/^@/, "")[0]?.toUpperCase() ?? "?"}
+              </Text>
+            </View>
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.ink,
+                fontWeight: "900",
+                fontSize: 11,
+                letterSpacing: 0.4,
+                textTransform: "uppercase",
+              }}
+            >
+              {isViewer ? "ME" : handle}
+            </Text>
+            {selected ? (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  backgroundColor: colors.ink,
+                  paddingHorizontal: 4,
+                  paddingVertical: 2,
+                  transform: [{ rotate: "-10deg" }],
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.lime,
+                    fontFamily: "Courier",
+                    fontSize: 9,
+                    fontWeight: "900",
+                    letterSpacing: 1.2,
+                  }}
+                >
+                  PICK
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+function WmltOpenBody({ prop }: { prop: MockProp }) {
+  const { castWmltVote, viewerId } = useStore();
+  const candidates = prop.candidateUserIds ?? [];
+  const myPick = prop.wmltVotes?.[viewerId] ?? null;
+  const lockedCount = Object.keys(prop.wmltVotes ?? {}).length;
+
+  return (
+    <View style={{ marginTop: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -3 }}>
+        {candidates.map((cid) => (
+          <FaceTile
+            key={cid}
+            userId={cid}
+            handle={handleOf(cid)}
+            isViewer={cid === viewerId}
+            selected={myPick === cid}
+            onPress={() => castWmltVote(prop.id, cid)}
+          />
+        ))}
+      </View>
+      <View
+        style={{
+          marginTop: 6,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontFamily: "Courier",
+            fontSize: 11,
+            fontWeight: "900",
+            letterSpacing: 1.2,
+          }}
+        >
+          {lockedCount} / {prop.voterCount} LOCKED IN
+        </Text>
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontFamily: "Courier",
+            fontSize: 11,
+            fontWeight: "700",
+          }}
+        >
+          {myPick ? "YOUR PICK SAVED" : "PICK TO LOCK IN"}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function WmltResolvedBody({ prop }: { prop: MockProp }) {
+  const winners = prop.wmltWinnerIds ?? [];
+  const tally: Record<string, number> = {};
+  for (const t of Object.values(prop.wmltVotes ?? {})) {
+    tally[t] = (tally[t] ?? 0) + 1;
+  }
+  const totalVotes = Object.keys(prop.wmltVotes ?? {}).length;
+  return (
+    <View style={{ marginTop: 12 }}>
+      <View
+        style={{
+          alignSelf: "flex-start",
+          backgroundColor: colors.lime,
+          borderColor: colors.ink,
+          borderWidth: border.thick,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          marginBottom: 12,
+        }}
+      >
+        <Text style={{ color: colors.ink, fontSize: 10, fontWeight: "900", letterSpacing: 1.4 }}>
+          PLURALITY {winners.length > 1 ? "TIE" : "WINNER"}
+        </Text>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {winners.length === 0 ? (
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontFamily: "Courier",
+              fontSize: 12,
+              fontWeight: "700",
+            }}
+          >
+            NOBODY VOTED ON THIS ONE.
+          </Text>
+        ) : (
+          winners.map((wid) => (
+            <View
+              key={wid}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: colors.ink,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+              }}
+            >
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  backgroundColor: colorFor(wid),
+                  marginRight: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: "#FFF", fontWeight: "900", fontSize: 11 }}>
+                  {handleOf(wid).replace(/^@/, "")[0]?.toUpperCase() ?? "?"}
+                </Text>
+              </View>
+              <Text
+                style={{
+                  color: colors.lime,
+                  fontWeight: "900",
+                  fontSize: 14,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                }}
+              >
+                {handleOf(wid)}
+              </Text>
+              <Text
+                style={{
+                  marginLeft: 8,
+                  color: colors.chalk,
+                  fontFamily: "Courier",
+                  fontWeight: "900",
+                  fontSize: 12,
+                }}
+              >
+                {tally[wid] ?? 0}V
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+      <Text
+        style={{
+          marginTop: 10,
+          color: colors.textMuted,
+          fontFamily: "Courier",
+          fontSize: 11,
+          fontWeight: "900",
+          letterSpacing: 1.2,
+        }}
+      >
+        {totalVotes} TOTAL VOTES · WHO VOTED FOR WHOM IS REVEALED IN THE MIRROR
+      </Text>
+    </View>
+  );
+}
+
+/* ─────────────────────────── Card shell ─────────────────────────── */
+
 export function PropCard({ prop, onTapWager }: Props) {
   const { positions } = useStore();
   const pos = positions[prop.id];
-  const yesProb = impliedYesProb(prop);
-  const noProb = impliedNoProb(prop);
+  const isWmlt = prop.kind === "WMLT";
+  const yesProb = !isWmlt ? impliedYesProb(prop) : 0.5;
+  const noProb = !isWmlt ? impliedNoProb(prop) : 0.5;
   const volume = prop.yesPool + prop.noPool;
 
   return (
@@ -352,6 +581,60 @@ export function PropCard({ prop, onTapWager }: Props) {
           padding: 16,
         }}
       >
+        {/* Top chip row */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: isWmlt ? colors.violet : colors.ink,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+            }}
+          >
+            <Ionicons
+              name={isWmlt ? "people" : "trending-up"}
+              size={11}
+              color={isWmlt ? colors.ink : colors.lime}
+              style={{ marginRight: 5 }}
+            />
+            <Text
+              style={{
+                color: isWmlt ? colors.ink : colors.lime,
+                fontFamily: "Courier",
+                fontSize: 10,
+                fontWeight: "900",
+                letterSpacing: 1.2,
+              }}
+            >
+              {isWmlt ? "ASKUS · WMLT" : "YES / NO BET"}
+            </Text>
+            {prop.fromHouse ? (
+              <Text
+                style={{
+                  marginLeft: 6,
+                  color: isWmlt ? colors.ink : colors.lime,
+                  fontFamily: "Courier",
+                  fontSize: 9,
+                  fontWeight: "900",
+                  letterSpacing: 1,
+                  opacity: 0.75,
+                }}
+              >
+                · FROM THE HOUSE
+              </Text>
+            ) : null}
+          </View>
+          <CountdownChip expiresAt={prop.expiresAt} />
+        </View>
+
         <Text
           style={{
             fontSize: 17,
@@ -365,7 +648,14 @@ export function PropCard({ prop, onTapWager }: Props) {
           {prop.description}
         </Text>
 
-        {prop.status === "OPEN" ? (
+        {/* Body switches on kind + status */}
+        {isWmlt ? (
+          prop.status === "RESOLVED" ? (
+            <WmltResolvedBody prop={prop} />
+          ) : (
+            <WmltOpenBody prop={prop} />
+          )
+        ) : prop.status === "OPEN" ? (
           <>
             <View style={{ marginTop: 14, marginBottom: 12 }}>
               <View
@@ -375,24 +665,10 @@ export function PropCard({ prop, onTapWager }: Props) {
                   marginBottom: 6,
                 }}
               >
-                <Text
-                  style={{
-                    color: colors.yes,
-                    fontSize: 11,
-                    fontWeight: "900",
-                    letterSpacing: 1.2,
-                  }}
-                >
+                <Text style={{ color: colors.yes, fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }}>
                   YES {asCents(yesProb)}
                 </Text>
-                <Text
-                  style={{
-                    color: colors.no,
-                    fontSize: 11,
-                    fontWeight: "900",
-                    letterSpacing: 1.2,
-                  }}
-                >
+                <Text style={{ color: colors.no, fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }}>
                   NO {asCents(noProb)}
                 </Text>
               </View>
