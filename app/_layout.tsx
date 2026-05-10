@@ -26,6 +26,10 @@ export default function RootLayout() {
               name="event/[id]"
               options={{ animation: "slide_from_right" }}
             />
+            <Stack.Screen
+              name="lobby/[id]"
+              options={{ animation: "fade_from_bottom" }}
+            />
           </Stack>
         </StoreProvider>
       </SafeAreaProvider>

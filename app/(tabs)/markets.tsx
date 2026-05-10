@@ -6,7 +6,6 @@ import { ScreenFrame } from "@/components/ScreenFrame";
 import { AvatarStack } from "@/components/AvatarStack";
 import { colors, border } from "@/theme/tokens";
 import {
-  mockEvents,
   MockEvent,
   visiblePropsFor,
   mockFriends,
@@ -396,17 +395,17 @@ function EventRow({
 export default function MarketsScreen() {
   const [category, setCategory] = useState<string>("ALL");
   const router = useRouter();
-  const { props, viewerId, balance } = useStore();
+  const { events, props, viewerId, balance } = useStore();
 
   const eventStats = useMemo(() => {
-    return mockEvents.map((e) => {
+    return events.map((e) => {
       const propsForEvent = props.filter((p) => p.eventId === e.id);
       const visible = visiblePropsFor(viewerId, propsForEvent);
       const volume = visible.reduce((acc, p) => acc + p.yesPool + p.noPool, 0);
       const members = mockFriends.filter((f) => e.memberIds.includes(f.id));
       return { event: e, visibleCount: visible.length, volume, members };
     });
-  }, [props, viewerId]);
+  }, [events, props, viewerId]);
 
   const filtered = useMemo(() => {
     if (category === "LIVE") {

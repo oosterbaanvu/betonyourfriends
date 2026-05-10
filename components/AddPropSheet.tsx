@@ -37,14 +37,16 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
   const [kind, setKind] = useState<Kind>("YESNO");
   const [text, setText] = useState("");
   const [subjects, setSubjects] = useState<string[]>([]);
-  const [durationMinutes, setDurationMinutes] = useState<number>(60 * 4);
+  const [durationMinutes, setDurationMinutes] = useState<number>(60);
+  const [advanced, setAdvanced] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setKind("YESNO");
       setText("");
       setSubjects([]);
-      setDurationMinutes(60 * 4);
+      setDurationMinutes(60);
+      setAdvanced(false);
     }
   }, [visible]);
 
@@ -59,7 +61,7 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
             { expiresInMinutes: durationMinutes }
           );
     if (!result.ok) {
-      if (Platform.OS !== "web") Alert.alert("Couldn't add prop", result.reason);
+      if (Platform.OS !== "web") Alert.alert("Couldn't post bet", result.reason);
       else if (typeof window !== "undefined") window.alert(result.reason);
       return;
     }
@@ -90,7 +92,7 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
                 backgroundColor: colors.chalk,
                 borderTopColor: colors.ink,
                 borderTopWidth: border.brutal,
-                padding: 20,
+                padding: 18,
                 paddingBottom: 28,
                 maxHeight: "92%",
               }}
@@ -113,173 +115,132 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
                     color: colors.textMuted,
                     letterSpacing: 1.6,
                     fontFamily: "Courier",
-                    marginBottom: 4,
                   }}
                 >
-                  NEW BET
+                  QUICK BET
                 </Text>
                 <Text
                   style={{
-                    fontSize: 22,
+                    fontSize: 26,
                     fontWeight: "900",
                     color: colors.ink,
-                    letterSpacing: -0.4,
-                    marginBottom: 14,
+                    letterSpacing: -0.6,
+                    marginTop: 2,
+                    marginBottom: 12,
                     textTransform: "uppercase",
                   }}
                 >
-                  {kind === "YESNO" ? "What might happen?" : "Who is most likely to..."}
+                  What's the bet?
                 </Text>
-
-                {/* Kind switcher */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    borderColor: colors.ink,
-                    borderWidth: border.thick,
-                    marginBottom: 16,
-                  }}
-                >
-                  <Pressable
-                    onPress={() => setKind("YESNO")}
-                    style={{
-                      flex: 1,
-                      backgroundColor: kind === "YESNO" ? colors.ink : colors.chalk,
-                      paddingVertical: 10,
-                      paddingHorizontal: 10,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: kind === "YESNO" ? colors.lime : colors.ink,
-                        fontWeight: "900",
-                        fontSize: 11,
-                        letterSpacing: 1.4,
-                        textAlign: "center",
-                      }}
-                    >
-                      YES / NO BET
-                    </Text>
-                    <Text
-                      style={{
-                        color: kind === "YESNO" ? "#A1A1A1" : colors.textMuted,
-                        fontFamily: "Courier",
-                        fontSize: 10,
-                        fontWeight: "700",
-                        textAlign: "center",
-                        marginTop: 2,
-                      }}
-                    >
-                      WAGER WITH TOKENS
-                    </Text>
-                  </Pressable>
-                  <View style={{ width: border.thick, backgroundColor: colors.ink }} />
-                  <Pressable
-                    onPress={() => setKind("WMLT")}
-                    style={{
-                      flex: 1,
-                      backgroundColor: kind === "WMLT" ? colors.ink : colors.chalk,
-                      paddingVertical: 10,
-                      paddingHorizontal: 10,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: kind === "WMLT" ? colors.lime : colors.ink,
-                        fontWeight: "900",
-                        fontSize: 11,
-                        letterSpacing: 1.4,
-                        textAlign: "center",
-                      }}
-                    >
-                      ASKUS · WMLT
-                    </Text>
-                    <Text
-                      style={{
-                        color: kind === "WMLT" ? "#A1A1A1" : colors.textMuted,
-                        fontFamily: "Courier",
-                        fontSize: 10,
-                        fontWeight: "700",
-                        textAlign: "center",
-                        marginTop: 2,
-                      }}
-                    >
-                      VOTE ON A FRIEND
-                    </Text>
-                  </Pressable>
-                </View>
 
                 <TextInput
                   value={text}
                   onChangeText={setText}
                   placeholder={
                     kind === "YESNO"
-                      ? "Julian beats Floris in a leg of darts"
-                      : "Who's most likely to argue about the scoring math?"
+                      ? "Dave chugs a beer in under 30 seconds"
+                      : "Who's most likely to embarrass themselves first?"
                   }
                   placeholderTextColor={colors.textFaint}
                   multiline
+                  autoFocus
                   style={{
                     borderColor: colors.ink,
                     borderWidth: border.thick,
                     paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    fontSize: 16,
-                    fontWeight: "700",
+                    paddingVertical: 14,
+                    fontSize: 17,
+                    fontWeight: "800",
                     color: colors.ink,
-                    minHeight: 70,
+                    minHeight: 80,
                     textAlignVertical: "top",
-                    marginBottom: 14,
                     backgroundColor: colors.bone,
                   }}
                 />
 
-                {/* Duration picker */}
-                <Text
+                {/* Advanced toggle */}
+                <Pressable
+                  onPress={() => setAdvanced((a) => !a)}
                   style={{
-                    color: colors.textMuted,
-                    fontFamily: "Courier",
-                    fontSize: 10,
-                    fontWeight: "900",
-                    letterSpacing: 1.4,
-                    marginBottom: 6,
+                    marginTop: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
                   }}
                 >
-                  LOCKS IN
-                </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-                  {DURATIONS.map((d) => {
-                    const active = durationMinutes === d.minutes;
-                    return (
+                  <Ionicons
+                    name={advanced ? "chevron-down" : "chevron-forward"}
+                    size={14}
+                    color={colors.textMuted}
+                  />
+                  <Text
+                    style={{
+                      marginLeft: 4,
+                      color: colors.textMuted,
+                      fontFamily: "Courier",
+                      fontSize: 11,
+                      fontWeight: "900",
+                      letterSpacing: 1.4,
+                    }}
+                  >
+                    {advanced ? "HIDE OPTIONS" : "OPTIONS · KIND · TIMER · SUBJECTS"}
+                  </Text>
+                </Pressable>
+
+                {advanced ? (
+                  <View style={{ marginTop: 12 }}>
+                    {/* Kind switcher */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        borderColor: colors.ink,
+                        borderWidth: border.thick,
+                        marginBottom: 14,
+                      }}
+                    >
                       <Pressable
-                        key={d.minutes}
-                        onPress={() => setDurationMinutes(d.minutes)}
+                        onPress={() => setKind("YESNO")}
                         style={{
-                          paddingHorizontal: 12,
+                          flex: 1,
+                          backgroundColor: kind === "YESNO" ? colors.ink : colors.chalk,
                           paddingVertical: 8,
-                          backgroundColor: active ? colors.ink : colors.chalk,
-                          borderColor: colors.ink,
-                          borderWidth: border.thick,
                         }}
                       >
                         <Text
                           style={{
-                            color: active ? colors.lime : colors.ink,
+                            color: kind === "YESNO" ? colors.lime : colors.ink,
                             fontWeight: "900",
                             fontSize: 11,
-                            letterSpacing: 1.2,
+                            letterSpacing: 1.4,
+                            textAlign: "center",
                           }}
                         >
-                          {d.label}
+                          YES / NO BET
                         </Text>
                       </Pressable>
-                    );
-                  })}
-                </View>
+                      <View style={{ width: border.thick, backgroundColor: colors.ink }} />
+                      <Pressable
+                        onPress={() => setKind("WMLT")}
+                        style={{
+                          flex: 1,
+                          backgroundColor: kind === "WMLT" ? colors.ink : colors.chalk,
+                          paddingVertical: 8,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: kind === "WMLT" ? colors.lime : colors.ink,
+                            fontWeight: "900",
+                            fontSize: 11,
+                            letterSpacing: 1.4,
+                            textAlign: "center",
+                          }}
+                        >
+                          ASKUS · WMLT
+                        </Text>
+                      </Pressable>
+                    </View>
 
-                {/* Subjects only for YESNO */}
-                {kind === "YESNO" ? (
-                  <>
+                    {/* Duration */}
                     <Text
                       style={{
                         color: colors.textMuted,
@@ -290,75 +251,133 @@ export function AddPropSheet({ visible, onClose, eventId, eventMembers }: Props)
                         marginBottom: 6,
                       }}
                     >
-                      WHO'S THIS ABOUT? (THEY WON'T SEE IT)
+                      LOCKS IN
                     </Text>
-                    <SubjectTagger
-                      friends={eventMembers}
-                      selected={subjects}
-                      onChange={setSubjects}
-                    />
-                  </>
-                ) : (
-                  <View
-                    style={{
-                      backgroundColor: colors.bone,
-                      borderColor: colors.ink,
-                      borderWidth: border.thick,
-                      padding: 12,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: colors.ink,
-                        fontFamily: "Courier",
-                        fontSize: 11,
-                        fontWeight: "900",
-                        letterSpacing: 1.2,
-                      }}
-                    >
-                      EVERY MEMBER IS A CANDIDATE
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.textMuted,
-                        fontFamily: "Courier",
-                        fontSize: 10,
-                        fontWeight: "700",
-                        marginTop: 4,
-                      }}
-                    >
-                      VOTES HIDDEN UNTIL TIMER ENDS. WINNER REVEALED IN THE MIRROR.
-                    </Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                      {DURATIONS.map((d) => {
+                        const active = durationMinutes === d.minutes;
+                        return (
+                          <Pressable
+                            key={d.minutes}
+                            onPress={() => setDurationMinutes(d.minutes)}
+                            style={{
+                              paddingHorizontal: 12,
+                              paddingVertical: 7,
+                              backgroundColor: active ? colors.ink : colors.chalk,
+                              borderColor: colors.ink,
+                              borderWidth: border.thick,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: active ? colors.lime : colors.ink,
+                                fontWeight: "900",
+                                fontSize: 11,
+                                letterSpacing: 1.2,
+                              }}
+                            >
+                              {d.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    {kind === "YESNO" ? (
+                      <>
+                        <Text
+                          style={{
+                            color: colors.textMuted,
+                            fontFamily: "Courier",
+                            fontSize: 10,
+                            fontWeight: "900",
+                            letterSpacing: 1.4,
+                            marginBottom: 6,
+                          }}
+                        >
+                          ABOUT WHO? (OPTIONAL · THEY WON'T SEE IT)
+                        </Text>
+                        <SubjectTagger
+                          friends={eventMembers}
+                          selected={subjects}
+                          onChange={setSubjects}
+                        />
+                      </>
+                    ) : (
+                      <View
+                        style={{
+                          backgroundColor: colors.bone,
+                          borderColor: colors.ink,
+                          borderWidth: border.thick,
+                          padding: 10,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: colors.ink,
+                            fontFamily: "Courier",
+                            fontSize: 11,
+                            fontWeight: "900",
+                            letterSpacing: 1.2,
+                          }}
+                        >
+                          EVERY PLAYER IS A CANDIDATE
+                        </Text>
+                        <Text
+                          style={{
+                            color: colors.textMuted,
+                            fontFamily: "Courier",
+                            fontSize: 10,
+                            fontWeight: "700",
+                            marginTop: 4,
+                          }}
+                        >
+                          VOTES STAY HIDDEN UNTIL THE TIMER ENDS.
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                )}
+                ) : null}
 
                 <View style={{ height: 16 }} />
 
-                <Pressable
-                  onPress={canSubmit ? submit : undefined}
-                  style={{
-                    backgroundColor: canSubmit ? colors.lime : colors.borderSoft,
-                    borderColor: colors.ink,
-                    borderWidth: border.brutal,
-                    paddingVertical: 14,
-                    alignItems: "center",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="add" size={18} color={colors.ink} />
-                  <Text
-                    style={{
-                      marginLeft: 4,
-                      color: colors.ink,
-                      fontWeight: "900",
-                      fontSize: 14,
-                      letterSpacing: 1.4,
-                    }}
-                  >
-                    {kind === "YESNO" ? "POST BET" : "POST ASKUS"}
-                  </Text>
+                <Pressable onPress={canSubmit ? submit : undefined}>
+                  <View style={{ position: "relative", marginRight: 5 }}>
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 5,
+                        left: 5,
+                        right: -5,
+                        bottom: -5,
+                        backgroundColor: colors.ink,
+                      }}
+                    />
+                    <View
+                      style={{
+                        backgroundColor: canSubmit ? colors.lime : colors.borderSoft,
+                        borderColor: colors.ink,
+                        borderWidth: border.brutal,
+                        paddingVertical: 16,
+                        alignItems: "center",
+                        flexDirection: "row",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons name="flash" size={16} color={colors.ink} />
+                      <Text
+                        style={{
+                          marginLeft: 6,
+                          color: colors.ink,
+                          fontWeight: "900",
+                          fontSize: 15,
+                          letterSpacing: 1.4,
+                        }}
+                      >
+                        POST BET
+                      </Text>
+                    </View>
+                  </View>
                 </Pressable>
               </ScrollView>
             </View>

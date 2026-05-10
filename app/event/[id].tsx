@@ -5,7 +5,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, border } from "@/theme/tokens";
 import {
-  mockEvents,
   MockProp,
   visiblePropsFor,
   mockFriends,
@@ -196,9 +195,9 @@ function HeaderAction({
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { props, viewerId, balance, seedAskUsForEvent } = useStore();
+  const { events, props, viewerId, balance, seedAskUsForEvent } = useStore();
 
-  const event = useMemo(() => mockEvents.find((e) => e.id === id), [id]);
+  const event = useMemo(() => events.find((e) => e.id === id), [events, id]);
 
   // AI-seed AskUs prompts the first time this event is opened.
   useEffect(() => {

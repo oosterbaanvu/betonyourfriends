@@ -10,8 +10,10 @@ import {
 } from "react";
 import {
   CURRENT_USER_ID,
+  MockEvent,
   MockProp,
   mockEvents,
+  mockFriends,
   mockProps,
   PropStatus,
 } from "./mockData";
@@ -31,12 +33,19 @@ export type UserVote = {
 type Store = {
   viewerId: string;
   balance: number;
+  events: MockEvent[];
   props: MockProp[];
 
   /** propId -> Position for the current user (YESNO only). */
   positions: Record<string, Position>;
   /** propId -> the current user's YES/NO resolution vote. */
   votes: Record<string, UserVote>;
+
+  /** Create a new event/game (the viewer is the sole initial member). */
+  createGame: (title: string) => { ok: true; id: string } | { ok: false; reason: string };
+
+  /** Add a member to an event (lobby join). */
+  joinPlayer: (eventId: string, userId: string) => void;
 
   placeBet: (
     propId: string,
@@ -110,8 +119,17 @@ function computeWmltWinners(prop: MockProp): string[] {
   return Object.keys(tally).filter((id) => tally[id] === max);
 }
 
+function genInviteCode(): string {
+  const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const pick = () => A[Math.floor(Math.random() * A.length)];
+  return `${pick()}${pick()}${pick()}${pick()}-${pick()}${pick()}${pick()}`;
+}
+
+const ACCENTS: MockEvent["accent"][] = ["lime", "pink", "violet", "sun"];
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState(2840);
+  const [events, setEvents] = useState<MockEvent[]>(mockEvents);
   const [props, setProps] = useState<MockProp[]>(mockProps);
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const [votes, setVotes] = useState<Record<string, UserVote>>({});
@@ -382,12 +400,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const createGame: Store["createGame"] = useCallback((title) => {
+    const trimmed = title.trim();
+    if (!trimmed) return { ok: false, reason: "Give the game a name" };
+    const id = `evt_${Date.now().toString(36)}`;
+    const newEvent: MockEvent = {
+      id,
+      title: trimmed,
+      creator: mockFriends.find((f) => f.id === CURRENT_USER_ID)?.handle ?? "@you",
+      startsAt: "Just now",
+      startsInMinutes: 0,
+      status: "LIVE",
+      memberIds: [CURRENT_USER_ID],
+      inviteCode: genInviteCode(),
+      accent: ACCENTS[Math.floor(Math.random() * ACCENTS.length)],
+    };
+    setEvents((prev) => [newEvent, ...prev]);
+    return { ok: true, id };
+  }, []);
+
+  const joinPlayer: Store["joinPlayer"] = useCallback((eventId, userId) => {
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id !== eventId || e.memberIds.includes(userId)
+          ? e
+          : { ...e, memberIds: [...e.memberIds, userId] }
+      )
+    );
+  }, []);
+
   const seedAskUsForEvent: Store["seedAskUsForEvent"] = useCallback(
     (eventId) => {
       if (seededEvents.current.has(eventId)) return;
-      seededEvents.current.add(eventId);
-      const event = mockEvents.find((e) => e.id === eventId);
+      const event = events.find((e) => e.id === eventId);
       if (!event) return;
+      seededEvents.current.add(eventId);
       const fresh = generateAskUsForEvent({
         eventId,
         title: event.title,
@@ -399,7 +446,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (fresh.length === 0) return;
       setProps((prev) => [...prev, ...fresh]);
     },
-    []
+    [events]
   );
 
   const propById = useCallback(
@@ -414,9 +461,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => ({
       viewerId: CURRENT_USER_ID,
       balance,
+      events,
       props,
       positions,
       votes,
+      createGame,
+      joinPlayer,
       placeBet,
       castVote,
       castWmltVote,
@@ -428,9 +478,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }),
     [
       balance,
+      events,
       props,
       positions,
       votes,
+      createGame,
+      joinPlayer,
       placeBet,
       castVote,
       castWmltVote,
