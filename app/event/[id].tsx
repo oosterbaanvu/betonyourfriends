@@ -409,6 +409,14 @@ export default function EventDetailScreen() {
           </Text>
           <View style={{ flex: 1, flexDirection: "row", justifyContent: "flex-end" }}>
             <HeaderAction
+              icon="game-controller"
+              label="PARTY"
+              onPress={() =>
+                router.push({ pathname: "/game/party-launch", params: { eventId: event.id } })
+              }
+              bg="pink"
+            />
+            <HeaderAction
               icon="add"
               label="ADD PROP"
               onPress={() => setShowAdd(true)}
