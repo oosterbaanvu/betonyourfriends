@@ -59,9 +59,12 @@ export type MockProp = {
   resolvedSide?: "YES" | "NO";
 
   /**
-   * Subject's own confession when the prop hits AWAITING_VERDICT. YESNO only.
+   * Each tagged subject's own verdict. The bet only RESOLVES once every
+   * id in subjectUserIds has an entry here AND they all agree. Disagreement
+   * leaves the bet AWAITING_VERDICT and opens the group-vote fallback so
+   * non-subject bettors can adjudicate.
    */
-  subjectVerdict?: "CONFESSED" | "DENIED";
+  subjectVerdicts?: Record<string, "CONFESSED" | "DENIED">;
 
   /* ── WMLT-only fields ───────────────────────────────────── */
   /** Members eligible to be voted for. Defaults to all event members. */
@@ -375,6 +378,31 @@ export const mockProps: MockProp[] = [
     status: "AWAITING_VERDICT",
     expiresAt: NOW - 10 * MINUTE,
   }),
+  // ── Multi-subject demo: both subjects still owe a verdict ───
+  yesno({
+    id: "prp_24",
+    eventId: "evt_5",
+    description: "Jules beats Steve in their karaoke point count",
+    subjectUserIds: ["u_jules", "u_steve"],
+    yesPool: 720,
+    noPool: 480,
+    voterCount: 3,
+    status: "AWAITING_VERDICT",
+    expiresAt: NOW - 2 * MINUTE,
+  }),
+  // ── Multi-subject demo: co-subject already weighed in ───
+  yesno({
+    id: "prp_25",
+    eventId: "evt_5",
+    description: "Mark made it through 'Bohemian Rhapsody' without skipping a verse",
+    subjectUserIds: ["u_jules", "u_mark"],
+    subjectVerdicts: { u_mark: "DENIED" },
+    yesPool: 320,
+    noPool: 480,
+    voterCount: 3,
+    status: "AWAITING_VERDICT",
+    expiresAt: NOW - 5 * MINUTE,
+  }),
   // ── Expired WMLT to demo Mirror reveal ───
   // Jules wins this one — the Mirror will reveal who voted for him.
   {
@@ -402,6 +430,41 @@ export const mockProps: MockProp[] = [
     fromHouse: true,
   },
 ];
+
+/* ───────────────────── Subject verdict helpers ───────────────────── */
+
+export type SubjectAgreement = "CONFESSED" | "DENIED" | "MIXED" | "INCOMPLETE";
+
+/** True if every tagged subject has cast a verdict. False for no-subject props. */
+export function allSubjectsVoted(prop: MockProp): boolean {
+  if (prop.kind !== "YESNO") return false;
+  if (prop.subjectUserIds.length === 0) return false;
+  const vs = prop.subjectVerdicts ?? {};
+  return prop.subjectUserIds.every((id) => !!vs[id]);
+}
+
+/**
+ * Where this prop stands on subject agreement:
+ *  - INCOMPLETE: at least one subject hasn't cast a verdict yet
+ *  - CONFESSED:  everyone confessed (resolves YES)
+ *  - DENIED:     everyone denied (resolves NO)
+ *  - MIXED:      everyone weighed in but they disagree — group fallback opens
+ */
+export function subjectAgreement(prop: MockProp): SubjectAgreement {
+  if (!allSubjectsVoted(prop)) return "INCOMPLETE";
+  const vs = prop.subjectVerdicts!;
+  const list = prop.subjectUserIds.map((id) => vs[id]);
+  if (list.every((v) => v === "CONFESSED")) return "CONFESSED";
+  if (list.every((v) => v === "DENIED")) return "DENIED";
+  return "MIXED";
+}
+
+/** Group vote is open when subjects deadlock OR when there are no subjects at all. */
+export function groupVoteOpen(prop: MockProp): boolean {
+  if (prop.status !== "AWAITING_VERDICT") return false;
+  if (prop.subjectUserIds.length === 0) return true;
+  return subjectAgreement(prop) === "MIXED";
+}
 
 /**
  * Filter a list of props to those a viewer is allowed to see/wager on.
@@ -437,19 +500,22 @@ export function eventPot(eventId: string, props: MockProp[]): number {
  * props ever appear here. While anything is still open the viewer learns
  * nothing about it.
  *
- * Includes both YESNO props about the viewer (CONFESS / DENY judgment)
- * and WMLT props the viewer was the plurality target of (the AskUs reveal).
+ * YESNO props about the viewer split into three buckets:
+ *   pending  — viewer hasn't cast their own verdict yet (action needed)
+ *   waiting  — viewer voted, still waiting on co-subjects (informational)
+ *   judged   — everyone's weighed in; result on the Wall of Shame
+ *              (includes both clean resolutions and MIXED deadlocks)
+ *
+ * Plus WMLT props the viewer was the plurality target of (the AskUs reveal).
  */
 export function mirrorStateFor(viewerId: string, props: MockProp[]) {
   const now = Date.now();
-  // YESNO: only props ABOUT the viewer, and only after expiry.
   const yesnoSubject = props.filter(
     (p) =>
       p.kind === "YESNO" &&
       p.subjectUserIds.includes(viewerId) &&
       p.expiresAt <= now
   );
-  // WMLT: only props where the viewer was the plurality, and only after expiry.
   const wmltSubject = props.filter(
     (p) =>
       p.kind === "WMLT" &&
@@ -457,13 +523,20 @@ export function mirrorStateFor(viewerId: string, props: MockProp[]) {
       (p.wmltWinnerIds ?? []).includes(viewerId)
   );
 
-  // YESNO categorization for CONFESS / DENY flow.
-  const pendingYesno = yesnoSubject.filter(
-    (p) => p.status !== "RESOLVED" && !p.subjectVerdict
-  );
-  const judgedYesno = yesnoSubject.filter((p) => !!p.subjectVerdict);
+  const myVerdict = (p: MockProp) => p.subjectVerdicts?.[viewerId];
 
-  // Secret count: open YESNO props about you that haven't expired yet.
+  const pending = yesnoSubject.filter(
+    (p) => !myVerdict(p) && p.status !== "RESOLVED"
+  );
+  const waiting = yesnoSubject.filter(
+    (p) => !!myVerdict(p) && !allSubjectsVoted(p)
+  );
+  const judged = yesnoSubject.filter(
+    (p) =>
+      !!myVerdict(p) &&
+      (allSubjectsVoted(p) || p.status === "RESOLVED")
+  );
+
   const secret = props.filter(
     (p) =>
       p.kind === "YESNO" &&
@@ -471,14 +544,13 @@ export function mirrorStateFor(viewerId: string, props: MockProp[]) {
       p.expiresAt > now
   );
 
-  // Pending action: things you need to act on right now (YESNO verdicts).
-  // WMLT reveals are passive — informational only.
   return {
     secretCount: secret.length,
-    pendingCount: pendingYesno.length + wmltSubject.length,
-    pending: pendingYesno,
+    pendingCount: pending.length + wmltSubject.length,
+    pending,
+    waiting,
     wmltReveals: wmltSubject,
-    judged: judgedYesno,
-    judgedCount: judgedYesno.length,
+    judged,
+    judgedCount: judged.length,
   };
 }
