@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Animated,
@@ -225,28 +225,8 @@ function PulseDot() {
 export default function LobbyScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { events, viewerId, joinPlayer } = useStore();
+  const { events, viewerId } = useStore();
   const event = events.find((e) => e.id === id);
-
-  /* Simulate friends joining the lobby over a few seconds. */
-  useEffect(() => {
-    if (!event) return;
-    const others = mockFriends
-      .filter((f) => f.id !== viewerId && !event.memberIds.includes(f.id))
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 4);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    others.forEach((f, i) => {
-      const t = setTimeout(
-        () => joinPlayer(event.id, f.id),
-        1200 + i * (1400 + Math.random() * 900)
-      );
-      timers.push(t);
-    });
-    return () => timers.forEach((t) => clearTimeout(t));
-    // Intentionally only on mount; subsequent joins via this effect are not desired.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event?.id]);
 
   if (!event) {
     return (
@@ -314,7 +294,9 @@ export default function LobbyScreen() {
             letterSpacing: 0.8,
           }}
         >
-          WAITING FOR FRIENDS · {event.memberIds.length} IN
+          {event.memberIds.length === 1
+            ? "WAITING FOR FRIENDS · SHARE THE CODE"
+            : `${event.memberIds.length} IN · START WHEN READY`}
         </Text>
       </View>
 

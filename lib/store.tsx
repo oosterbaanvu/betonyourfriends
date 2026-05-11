@@ -149,18 +149,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let mutated = false;
     const next = props.map((p) => {
       if (p.status === "RESOLVED") return p;
-      if (now < p.expiresAt) return p;
-      if (p.kind === "YESNO") {
-        // YESNO with subjects → AWAITING_VERDICT (subject judges in Mirror).
-        // YESNO without subjects → AWAITING_VERDICT (group votes).
-        if (p.status === "OPEN") {
-          mutated = true;
-          return { ...p, status: "AWAITING_VERDICT" as PropStatus };
-        }
-        return p;
-      }
-      // WMLT: resolve immediately once expired.
-      if (p.status === "OPEN") {
+
+      // WMLT resolves on EITHER full participation OR timer expiry,
+      // whichever happens first. The "everyone voted" path is what
+      // lets the round end mid-evening without waiting on the clock.
+      if (p.kind === "WMLT") {
+        if (p.status !== "OPEN") return p;
+        const votesIn = Object.keys(p.wmltVotes ?? {}).length;
+        const everyoneVoted = votesIn >= p.voterCount;
+        const expired = now >= p.expiresAt;
+        if (!everyoneVoted && !expired) return p;
         const winners = computeWmltWinners(p);
         mutated = true;
         return {
@@ -168,6 +166,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           status: "RESOLVED" as PropStatus,
           wmltWinnerIds: winners,
         };
+      }
+
+      // YESNO only resolves on timer expiry; subjects judge from the Mirror.
+      if (now < p.expiresAt) return p;
+      if (p.status === "OPEN") {
+        mutated = true;
+        return { ...p, status: "AWAITING_VERDICT" as PropStatus };
       }
       return p;
     });
@@ -380,7 +385,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const expiresInMinutes = options?.expiresInMinutes ?? 60 * 6;
       const expiresAt = Date.now() + expiresInMinutes * 60_000;
 
-      const voterCount = Math.max(3, 7 - subjectUserIds.length);
+      // voterCount = non-subject event members. Drives the majority
+      // threshold for the group-vote fallback when subjects deadlock.
+      const event = events.find((e) => e.id === eventId);
+      const memberCount = event?.memberIds.length ?? subjectUserIds.length + 1;
+      const voterCount = Math.max(1, memberCount - subjectUserIds.length);
       const newProp: MockProp = {
         id: `prp_${Date.now().toString(36)}`,
         eventId,
@@ -398,7 +407,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProps((prev) => [...prev, newProp]);
       return { ok: true, id: newProp.id };
     },
-    []
+    [events]
   );
 
   const addWmltProp: Store["addWmltProp"] = useCallback(
